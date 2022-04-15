@@ -1,8 +1,10 @@
 include ../local_config.mk
 
 #Compiling parameters
+#path en spack
+GENERAL= -I$(MFEM_INSTALL_DIR)/include/mfem
 CXX = mpic++
-FLAGS = -std=c++11 -O3 $(MFEM_FLAGS)
+FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) $(GENERAL)
 RUN = mpirun -np $(PROCCESORS) ./
 SOURCES = $(wildcard code/*.cpp)
 DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)

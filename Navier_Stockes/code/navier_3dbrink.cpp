@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
    if(0)
    {
        int nclimit=1;
-       for (int iter = 0; iter<3; iter++)
+       for (int iter = 0; iter<1; iter++)
        {
            Array<Refinement> refs;
            for (int i = 0; i < pmesh->GetNE(); i++)
