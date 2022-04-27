@@ -3,12 +3,12 @@
 using namespace mfem;
 using namespace navier;
 
-struct s_NavierContext
+struct Navier_Parameters
 {
     //Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
-    int order = 6;
+    int order = 4;
     int vis_freq = 10;
     double dt = 0.001;
     double t_final = 0.5;
@@ -86,6 +86,9 @@ int main(int argc, char *argv[])
     flowsolver.AddVelDirichletBC(Initial_Velocity, attr);
     ParGridFunction *u_gf = flowsolver.GetCurrentVelocity(); //Velocity solution
     ParGridFunction *p_gf = flowsolver.GetCurrentPressure(); //Presure solution
+    
+    ParGridFunction p_ex_gf(flowsolver.GetCurrentPressure()->ParFESpace());
+    GridFunctionCoefficient p_ex_gf_coeff(&p_ex_gf);
 
     //Paraview visualization
     ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", &pmesh);
@@ -115,6 +118,11 @@ int main(int argc, char *argv[])
         //Get system state
         u_gf = flowsolver.GetCurrentVelocity();
         p_gf = flowsolver.GetCurrentPressure();
+
+        // Remove mean value from exact pressure solution. POR QUE HAY QUE HACER ESTO?
+        p_ex_gf.ProjectCoefficient(p_excoeff);
+        flowsolver.MeanZero(p_ex_gf);
+
         double cfl = flowsolver.ComputeCFL(*u_gf, Parameters.dt);
 
         if (mpi.Root())
@@ -132,6 +140,8 @@ int main(int argc, char *argv[])
             paraview_out.Save();
         }
     }
+
+    flowsolver.PrintTimingData();
 
     //with MPI sesion theres no neet to Finalize MPI
 
