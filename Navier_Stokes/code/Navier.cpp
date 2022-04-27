@@ -8,10 +8,10 @@ struct s_NavierContext
     //Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
-    int order = 4;
-    int vis_freq = 100;
+    int order = 6;
+    int vis_freq = 10;
     double dt = 0.001;
-    double t_final = 1.0;
+    double t_final = 0.5;
 
    double kinvis = 1.0 / 40.0;
    double reference_pressure = 0.0;
@@ -23,7 +23,7 @@ void Initial_Velocity(const Vector &x, double t, Vector &u)
 {
     double xi = x(0);
     double yi = x(1);
-    double zi = x(3);
+    double zi = x(2);
 
     u(0) = 1.0 - exp(Parameters.lam * xi) * cos(2.0 * M_PI * yi);
     u(1) = Parameters.lam/(2.0*M_PI)*exp(Parameters.lam*xi)*sin(2.0*M_PI*yi);
@@ -34,7 +34,7 @@ double Initial_Pressure(const Vector &x, double t)
 {
     double xi = x(0);
     double yi = x(1);
-    double zi = x(3);
+    double zi = x(2);
 
    return 0.5*(1.0-exp(2.0*Parameters.lam*xi))+Parameters.reference_pressure;
 }
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     //Load mesh
     //Mesh mfem::Mesh::MakeCartesian3D(int nx,int ny,int nz,Element::Type type,double sx=1.0,double sy=1.0,double sz=1.0, bool sfc_ordering=true)   
-    Mesh mesh = Mesh::MakeCartesian3D(2,4,2,Element::QUADRILATERAL,1.5,2.0,1.5);
+    Mesh mesh = Mesh::MakeCartesian3D(2,4,2,Element::QUADRILATERAL,1.5,2.0,0.1);
     //Mesh mesh = Mesh("mesh.msh");
     mesh.EnsureNodes();
     int dim = mesh.Dimension();
