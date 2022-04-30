@@ -8,10 +8,10 @@ struct Navier_Parameters
     //Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
-    int order = 4;
+    int order = 6;
     int vis_freq = 10;
-    double dt = 0.001;
-    double t_final = 0.5;
+    double dt = 0.00001;
+    double t_final = 0.005;
 
    double kinvis = 1.0 / 40.0;
    double reference_pressure = 0.0;
@@ -25,8 +25,16 @@ void Initial_Velocity(const Vector &x, double t, Vector &u)
     double yi = x(1);
     double zi = x(2);
 
-    u(0) = 1.0 - exp(Parameters.lam * xi) * cos(2.0 * M_PI * yi);
-    u(1) = Parameters.lam/(2.0*M_PI)*exp(Parameters.lam*xi)*sin(2.0*M_PI*yi);
+    if(x(0)<0.05)
+        u(0) = 0.05-x(0) ;
+    else
+        u(0)= 0.0;
+
+    if (u(1)<0.1)
+        u(1) = 0.0;
+    else
+        u(1)=0.0;
+
     u(2) = 0.0;
 }
 
@@ -36,7 +44,20 @@ double Initial_Pressure(const Vector &x, double t)
     double yi = x(1);
     double zi = x(2);
 
-   return 0.5*(1.0-exp(2.0*Parameters.lam*xi))+Parameters.reference_pressure;
+    return 0.00001;
+   //return 0.5*(1.0-exp(2.0*Parameters.lam*xi))+Parameters.reference_pressure;
+}
+
+void Boundary_Condition(const Vector &x, double t, Vector &u)
+{
+    double xi = x(0);
+    double yi = x(1);
+    double zi = x(2);
+
+
+    u(0) = (t*t+0.01)*0.005/(t+1);
+    u(1) = 0.0;
+    u(2) = 0.0;
 }
 
 int main(int argc, char *argv[])
@@ -83,7 +104,7 @@ int main(int argc, char *argv[])
     //Define Dirichlet boundary conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
     attr = 1;
-    flowsolver.AddVelDirichletBC(Initial_Velocity, attr);
+    flowsolver.AddVelDirichletBC(Boundary_Condition, attr);
     ParGridFunction *u_gf = flowsolver.GetCurrentVelocity(); //Velocity solution
     ParGridFunction *p_gf = flowsolver.GetCurrentPressure(); //Presure solution
     

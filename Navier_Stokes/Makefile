@@ -2,9 +2,8 @@ include ../local_config.mk
 
 #Compiling parameters
 #path en spack
-GENERAL= -I$(MFEM_INSTALL_DIR)/include/mfem
 CXX = mpic++
-FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) $(GENERAL)
+FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL)
 RUN = mpirun -np $(PROCCESORS) ./
 SOURCES = $(wildcard code/*.cpp)
 DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)
@@ -12,6 +11,10 @@ DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)
 .PHONY: all main mesh graph clean oclean
 
 all: main
+
+test:
+	@echo $(MFEM_INSTALL_DIR)
+	@echo $(GENERAL)
 
 main: main.x
 	@echo -e 'Running program ... \n'
