@@ -20,6 +20,16 @@ main: main.x
 	@echo -e 'Running program ... \n'
 	@$(RUN)$<
 
+graph:
+ifeq ($(SHARE_DIR), NULL)
+	@echo 'No share directory.'
+else
+	@echo -e 'Moving graphs ... \c'
+	@rm -rf $(SHARE_DIR)/elasticidad
+	@cp -r results $(SHARE_DIR)/elasticidad
+	@echo -e 'Done!'
+endif
+
 main.x: $(DEPENDENCIES)
 	@echo -e 'Compiling' $@ '... \c'
 	@$(CXX) $(FLAGS) $^ $(MFEM_LIBS) -o $@
