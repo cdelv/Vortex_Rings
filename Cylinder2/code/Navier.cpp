@@ -9,14 +9,16 @@ struct Navier_Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
     int order = 2;
-    int vis_freq = 50;
-    double dt = 0.001;
-    double t_final = 0.25;
+    int vis_freq = 10;
+    double dt = 0.0001;
+    double t_final = 1.00;
+
+    double Ranillo = 0.2;
+    double V0anillo = 1.5;
 
    double kinvis = 0.001;
    double reference_pressure = 0.0;
    double Re = 1.0 / kinvis;
-   double lam = 0.5*Re-sqrt(0.25*Re*Re+4.0*M_PI*M_PI);
 } Parameters;
 
 void Initial_Velocity(const Vector &x, double t, Vector &u)
@@ -25,9 +27,12 @@ void Initial_Velocity(const Vector &x, double t, Vector &u)
    double yi = x(1);
    double zi = x(2);
 
-  if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(0.1,2)){
-        u(0) = 0.1*exp(-10*t);
-  }
+    u(0)=0;
+
+  /*if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(Parameters.Ranillo,2)){
+        u(0) = Parameters.V0anillo*exp(-50*xi);
+  }*/
+
    u(1) = 0.0;
    u(2) = 0.0;
 }
@@ -38,23 +43,16 @@ void Boundary_Condition1(const Vector &x, double t, Vector &u)
     double yi = x(1);
     double zi = x(2);
 
-    if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(0.1,2)){
-        u(0) = 0.1*exp(-t);
+    if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(Parameters.Ranillo,2) && t<Parameters.dt*2){
+        u(0) = Parameters.V0anillo;
     }
+    else 
+        u(0)=0;
+
     u(1) = 0.0;
     u(2) = 0.0;
 }
 
-void Boundary_Condition2(const Vector &x, double t, Vector &u)
-{
-    double xi = x(0);
-    double yi = x(1);
-    double zi = x(2);
-
-    u(0) = 0.0;
-    u(1) = 0.0;
-    u(2) = 0.0;
-}
 
 int main(int argc, char *argv[])
 {   
@@ -102,12 +100,12 @@ int main(int argc, char *argv[])
 
     //Define Dirichlet boundary conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
-    attr = 0; attr[0] = 1;
+    attr = 1; attr[0] = 1; attr[2] = 0;
     flowsolver.AddVelDirichletBC(Boundary_Condition1, attr);
 
-    // Array<int> attr2(pmesh.bdr_attributes.Max());
-    // attr = 0; attr[1] = 1;
-    // flowsolver.AddVelDirichletBC(Boundary_Condition2, attr2);
+    //Array<int> attr2(pmesh.bdr_attributes.Max());
+    //attr2 = 1; attr2[0] = 0; attr2[1] = 0;
+    //flowsolver.AddVelDirichletBC(Boundary_Condition2, attr2);
 
     flowsolver.Setup(Parameters.dt);
 
@@ -138,6 +136,7 @@ int main(int argc, char *argv[])
             last_step = true;
 
         flowsolver.Step(t, Parameters.dt, step);
+        u_excoeff.SetTime(t);
 
         //double cfl = flowsolver.ComputeCFL(*u_gf, Parameters.dt);
 
