@@ -35,13 +35,16 @@ main.x: $(DEPENDENCIES)
 	@$(CXX) $(FLAGS) $^ $(MFEM_LIBS) -o $@
 	@echo -e 'Done!\n'
 
-mesh: settings/cube.geo
-	gmsh settings/cube.geo -format msh2 -o mesh.msh -3 > /dev/null
+mesh: settings/struct_cube.geo
+	gmsh $< -format msh2 -o mesh.msh -3 > /dev/null
 
 .objects/%.o: code/%.cpp
 	@echo -e 'Building' $@ '... \c'
 	@$(CXX) $(FLAGS) -c $< $(MFEM_LIBS) -o $@
 	@echo -e 'Done!\n'
+
+clean:
+	rm -r results/graph/
 
 oclean:
 	@rm -rf .objects/*.o

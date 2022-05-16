@@ -8,10 +8,10 @@ struct Navier_Parameters
     //Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
-    int order = 4;
-    int vis_freq = 100;
-    double dt = 0.0001;
-    double t_final = 8.0;
+    int order = 2;
+    int vis_freq = 50;
+    double dt = 0.001;
+    double t_final = 0.25;
 
    double kinvis = 0.001;
    double reference_pressure = 0.0;
@@ -25,19 +25,35 @@ void Initial_Velocity(const Vector &x, double t, Vector &u)
    double yi = x(1);
    double zi = x(2);
 
-   double U = 2.25;
-
-   if (xi <= 1e-8)
-   {
-      u(0) = 16.0 * U * yi * zi * sin(M_PI * t / 8.0) * (0.41 - yi)
-             * (0.41 - zi) / pow(0.41, 4.0);
-   }
-   else
-   {
-      u(0) = 0.0;
-   }
+  if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(0.1,2)){
+        u(0) = 0.1*exp(-10*t);
+  }
    u(1) = 0.0;
    u(2) = 0.0;
+}
+
+void Boundary_Condition1(const Vector &x, double t, Vector &u)
+{
+    double xi = x(0);
+    double yi = x(1);
+    double zi = x(2);
+
+    if(pow(yi- 0.5,2) + pow(zi - 0.5,2) < pow(0.1,2)){
+        u(0) = 0.1*exp(-t);
+    }
+    u(1) = 0.0;
+    u(2) = 0.0;
+}
+
+void Boundary_Condition2(const Vector &x, double t, Vector &u)
+{
+    double xi = x(0);
+    double yi = x(1);
+    double zi = x(2);
+
+    u(0) = 0.0;
+    u(1) = 0.0;
+    u(2) = 0.0;
 }
 
 int main(int argc, char *argv[])
@@ -53,7 +69,7 @@ int main(int argc, char *argv[])
     //Load mesh
     //Mesh mfem::Mesh::MakeCartesian3D(int nx,int ny,int nz,Element::Type type,double sx=1.0,double sy=1.0,double sz=1.0, bool sfc_ordering=true)   
     //Mesh mesh = Mesh::MakeCartesian3D(2,4,2,Element::QUADRILATERAL,1.5,2.0,0.1);
-    Mesh mesh = Mesh("box-cylinder.mesh");
+    Mesh mesh = Mesh("mesh.msh");
     mesh.EnsureNodes();
     int dim = mesh.Dimension();
 
@@ -86,9 +102,12 @@ int main(int argc, char *argv[])
 
     //Define Dirichlet boundary conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
-    attr[0] = 1;
-    attr[2] = 1;
-    flowsolver.AddVelDirichletBC(Initial_Velocity, attr);
+    attr = 0; attr[0] = 1;
+    flowsolver.AddVelDirichletBC(Boundary_Condition1, attr);
+
+    // Array<int> attr2(pmesh.bdr_attributes.Max());
+    // attr = 0; attr[1] = 1;
+    // flowsolver.AddVelDirichletBC(Boundary_Condition2, attr2);
 
     flowsolver.Setup(Parameters.dt);
 
