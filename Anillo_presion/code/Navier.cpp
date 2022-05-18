@@ -61,15 +61,15 @@ double Press_Boundary_Condition(const Vector &x, double t)
     return Parameters.atm_pressure;
 }
 
-void Acceleration_terms(const Vector &x, double t, Vector &u)
+void Acceleration_terms(const Vector &x, double t, Vector &a)
 {
    double xi = x(0);
    double yi = x(1);
    double zi = x(2);
 
-    u(0) = 0.0;
-    u(1) = 0.0;
-    u(2) = -Parameters.gravity;
+    a(0) = 0.0;
+    a(1) = 0.0;
+    a(2) = -Parameters.gravity;
 }
 
 int main(int argc, char *argv[])
