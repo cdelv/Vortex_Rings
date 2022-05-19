@@ -9,14 +9,14 @@ struct Navier_Parameters
     int serial_refinements = 1;
     int parallel_refinements = 1;
     int order = 2;
-    int vis_freq = 10;
+    int vis_freq = 500;
     double dt = 0.0001;
-    double t_final = 20.00;
+    double t_final = 10.00;
 
     double R_ring = 0.2;
     double ring_center_y = 0.5;
     double ring_center_z = 0.5;
-    double V0_ring = 1.0;
+    double V0_ring = 0.0;
     double I_vel_exponent = 0.0;
     double I_active_dts = 100000.0;
 
@@ -24,7 +24,7 @@ struct Navier_Parameters
    double atm_pressure = 0.0;
    double gravity = 9.8;
 
-   double eta = 1e4;
+   double eta = 1e2;
 
 } Parameters;
 
@@ -79,27 +79,40 @@ public:
     BrinkPenalAccel(int dim):mfem::VectorCoefficient(dim){}
     virtual ~BrinkPenalAccel(){}
     void SetVel(mfem::GridFunction* gfvel){vel=gfvel;}
-    virtual void Eval(mfem::Vector &V, mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip)
+    void SetTime(double tt){t=tt;}
+    virtual void Eval(mfem::Vector &a, mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip)
     {
-        V.SetSize(GetVDim());
+    	//Body velocity  Fluid velocity   Fluid coordinates
+        Vector U0;       Vector U;        Vector X;
+        a.SetSize(GetVDim()); a*=0;
+        //Set Body velocity
+        U0.SetSize(GetVDim()); U0(0)=0; U0(1)=vy; U0(2)=vz;
+        U.SetSize(GetVDim()); U*=0;
+
+        if(t>10*Parameters.dt){
+        	x=1.5+vx*(t-10*Parameters.dt);
+        	U0(0)=vx;
+        }
+
         //Get the physical coordinates of integration point
-        Vector X; T.Transform(ip,X);
+        T.Transform(ip,X); 
 
         if((std::pow(X(0)-x,2)+std::pow(X(1)-y,2)+std::pow(X(2)-z,2)<std::pow(r,2))){
-            vel->GetVectorValue(T,ip,V);
-            V*=-Parameters.eta;
+            vel->GetVectorValue(T,ip,U);
+            a=U;
+            a-=U0;
+            a*=-Parameters.eta;
         }
-        else
-            V*=0;
     }
 
 private:
     mfem::GridFunction* vel = nullptr;
-    double x  = 0.3;
+    double t = 0;
+    double x  = 1.5;
     double y  = 0.5;
     double z  = 0.5;
     double r = 0.1;
-    double vx  = 0.0;
+    double vx  = -0.1;
     double vy  = 0.0;
     double vz  = 0.0;
 
@@ -208,6 +221,7 @@ int main(int argc, char *argv[])
         u_excoeff.SetTime(t);
 
         piston->SetVel(flowsolver.GetCurrentVelocity());
+        piston->SetTime(t);
 
         //Compute CFL condition to check numerical stability
         //double cfl = flowsolver.ComputeCFL(*u_gf, Parameters.dt);
@@ -230,6 +244,7 @@ int main(int argc, char *argv[])
     //with MPI sesion theres no neet to Finalize MPI
 
     //Free memory Dont have any pointer yet
+    delete piston;
 
     return 0;
 }
