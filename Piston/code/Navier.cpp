@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
     //Create Solid object
     BrinkPenalAccel piston(pmesh.Dimension());
-    piston.SetUp(0.3,0.5,0.5,0.5,0,0,0.2,0.05);
+    piston.SetUp(0.3,0.5,0.5,1.0,0,0,0.2,0.05);
     piston.SetVel(flowsolver.GetCurrentVelocity());
     piston.SetTime(t);
     flowsolver.AddAccelTerm(&piston,domain_attr);   
@@ -311,7 +311,9 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     //Get the physical coordinates of integration point
     T.Transform(ip,X); 
 
-    x=x0+vx*std::tanh(10*t)*t;
+
+    if(x<1)
+        x=x0+vx*std::tanh(10*t)*t;
 
     vel->GetVectorValue(T,ip,U);
     double chi = Chi(X,t);
