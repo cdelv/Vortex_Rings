@@ -1,5 +1,7 @@
 #include "navier_solver.hpp"
 #include <fstream>
+#include <string>
+
 using namespace mfem;
 using namespace navier;
 
@@ -22,9 +24,12 @@ struct Navier_Parameters
 
    double kinvis = 0.0005;
    double atm_pressure = 0.0;
-   double gravity = 9.8;
+    double gravity = 9.8;
+    void init(const std::string &parameters_file);
 
 } Parameters;
+
+double get_next_parameter(std::ifstream &file);
 
 void Initial_Velocity(const Vector &x, double t, Vector &u)
 {
@@ -74,6 +79,11 @@ void Acceleration_terms(const Vector &x, double t, Vector &a)
 
 int main(int argc, char *argv[])
 {   
+    //init Parameters
+    std::string parameters_file = "settup/parameters.txt";
+    Parameters.init(parameters_file);
+
+
     //Parameters
     double t = 0.0;
     int vis_print = 0;
@@ -190,4 +200,35 @@ int main(int argc, char *argv[])
     //Free memory Dont have any pointer yet
 
     return 0;
+}
+
+
+double get_next_parameter(std::ifstream &file){
+    std::string name_parameter;
+    getline(file,name_parameter,' ');
+    std::string string_value;
+    getline(file,string_value);
+    return stod(string_value);
+}
+
+void Navier_Parameters::init(const std::string &parameters_file){
+    std::ifstream fparams(parameters_file);
+    serial_refinements = (int) get_next_parameter(fparams);
+    parallel_refinements = (int) get_next_parameter(fparams);
+    order = (int) get_next_parameter(fparams);
+    vis_freq = (int) get_next_parameter(fparams);
+    dt = get_next_parameter(fparams);
+    t_final = get_next_parameter(fparams);
+
+    R_ring = get_next_parameter(fparams);
+    ring_center_y = get_next_parameter(fparams);
+    ring_center_z = get_next_parameter(fparams);
+    V0_ring = get_next_parameter(fparams);
+    I_vel_exponent = get_next_parameter(fparams);
+    I_active_dts = get_next_parameter(fparams);
+
+    kinvis = get_next_parameter(fparams);
+    atm_pressure = get_next_parameter(fparams);
+    gravity = get_next_parameter(fparams);
+    fparams.close();
 }
