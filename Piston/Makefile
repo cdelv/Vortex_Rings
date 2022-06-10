@@ -3,7 +3,7 @@ include ../local_config.mk
 #Compiling parameters
 #path en spack
 CXX = mpic++
-FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL)
+FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL) $(HYPRE_INC) $(SUNDIALS_INC)
 RUN = mpirun -np $(PROCCESORS) ./
 SOURCES = $(wildcard code/*.cpp)
 DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)
