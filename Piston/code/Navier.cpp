@@ -9,7 +9,7 @@ using namespace navier;
 struct Config
 {
     //Numerical Method Parameters
-    int serial_refinements = 2;
+    int serial_refinements = 1;
     int parallel_refinements = 1;
     int order = 2;
 
@@ -23,7 +23,7 @@ struct Config
     double r_ext = 0.2;
     double lenght = 0.5;
     double thickness =0.1;
-    double omega = 1;
+    double omega = 50;
 
     //Piston opening (circular)
     double r_open = 0.05;
@@ -65,7 +65,8 @@ public:
 
 private:
     mfem::GridFunction* vel = nullptr;
-    double t=0, pos_x=0;
+    double t=0, pos_x=0,star=0;
+    bool done=false;
     bool Piston_Wall(const Vector &X, double t);
     bool Piston(const Vector &X, double t);
     bool Piston_Exit(const Vector &X, double t);
@@ -289,12 +290,13 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     a.SetSize(GetVDim());
 
     //Armonic motion to the right
-    pos_x = Parameters.lenght + Parameters.lenght*std::sin(Parameters.omega*t+3*M_PI/2) + Parameters.thickness/2;
+    pos_x = Parameters.lenght + Parameters.lenght*std::sin(Parameters.omega*t+3*M_PI/2) + Parameters.thickness/2+star;
     U0(0) = Parameters.lenght*Parameters.omega*std::cos(Parameters.omega*t+3*M_PI/2);
     if(pos_x >= Parameters.lenght - Parameters.thickness/2)
     {	
     	pos_x = Parameters.lenght - Parameters.thickness/2;
     	U0(0)=0;
+        star = 2*(Parameters.lenght - Parameters.thickness/2);
     }
 
     //Get the physical coordinates at integration point
@@ -339,7 +341,7 @@ bool BrinkPenalAccel::Piston_Wall(const Vector &X, double t)
 
 bool BrinkPenalAccel::Piston(const Vector &X, double t)
 {
-	if (std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<Parameters.r_int && X(0)< pos_x + Parameters.thickness/2 && X(0)> pos_x - Parameters.thickness/2)
+	if (std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<Parameters.r_int && X(0)< pos_x + Parameters.thickness/2 )
 		return true;
 
 	return false;
