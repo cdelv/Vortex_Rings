@@ -24,8 +24,8 @@ struct Config
     double Lz = 1;
 
     //Piston Parameters
-    double Piston_R =0.2;
-    double Piston_T=0.1;
+    double Piston_R =0.15;
+    double Piston_T=0.05;
     double Piston_W=2;
     double Piston_P=2*M_PI/Piston_W;
 
@@ -134,13 +134,13 @@ int main(int argc, char *argv[])
     //Define Velocity Boundary Conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
-    attr[0] = 1;   attr[1] = 0;    attr[2] = 1;
+    attr[0] = 1;   attr[1] = 0;    attr[2] = 0;
     flowsolver.AddVelDirichletBC(Vel_Boundary_Condition, attr);
 
     //Define  Pressure Boundary Conditions
     Array<int> attr2(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
-    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 0;
+    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 1;
     flowsolver.AddPresDirichletBC(Press_Boundary_Condition, attr2);
 
     //Define Solution Pointers 
@@ -310,13 +310,14 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     //Get Fluid Velocity
     vel->GetVectorValue(T,ip,U);
 
-    double dist = 1.5;
-    x=Parameters.Tube_L*dist;
+    double dist = 1.3;
     if (Piston(X,t) && t<=Parameters.Piston_P/4)
     {
         x=Parameters.Tube_L*(dist+std::sin(Parameters.Piston_W*t+3*M_PI_2));
         U0(0)=Parameters.Tube_L*Parameters.Piston_W*std::cos(Parameters.Piston_W*t+3*M_PI_2);
     }
+    else
+    	x=Parameters.Tube_L*dist;
 
     //The - Sing is Already Included
     a(0)=chi*Parameters.eta*(U0(0)-U(0));
