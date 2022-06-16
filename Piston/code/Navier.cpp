@@ -13,33 +13,37 @@ struct Config
     int parallel_refinements = 1;
     int order = 2;
 
-    //Time Parameters (seconds)
+    //Time Parameters
     int vis_freq = 50;
     double dt = 0.0001;
-    double t_final = 20.00;
+    double t_final = 3;
 
-    //Piston Parameters (meters,seconds)
-    double r_int = 0.1;
-    double r_ext = 0.2;
-    double lenght = 0.5;
-    double thickness =0.1;
-    double omega = 50;
+    //Box Parameters
+    double Lx = 2;
+    double Ly = 1;
+    double Lz = 1;
 
-    //Piston opening (circular)
-    double r_open = 0.05;
+    //Piston Parameters
+    double Piston_R =0.2;
+    double Piston_T=0.1;
+    double Piston_W=2;
+    double Piston_P=2*M_PI/Piston_W;
 
-    //Box parameters (meters)
-    double Lx=2.0;
-    double Ly=1.0;
-    double Lz=1.0;
+    //Tube Parameters
+    double Tube_R = 0.2;
+    double Tube_L = 0.5;
+    double Tube_T = 0.05;
+
+    //Piston Outflow Parameters
+    double End_R = 0.2;
 
     //Physical Parameters
-    double kinvis = 0.00001488;  //m^2 s^-1 (air viscosity)
-    double atm_pressure = 0.0;	// Pa
-    double gravity = 9.8;	   //m s^-2
-    double Da = 5e-6;                        //Darcy Number, for Solid Obj, 1e-6 < Da < 1e-5.
-    double l = std::max(Lx,std::max(Ly,Lz));//Critical lenght.
-    double eta = kinvis/(Da*l*l);          //Kinvis/Da*l^2  Brinkman Penalization.
+    double kinvis = 0.0005;
+    double atm_pressure = 0.0;
+    double gravity = 9.8;
+    double Da = 5e-6;               //Darcy Number, for Solid Obj, 1e-6 < Da < 1e-5
+    double l = Tube_L;             // critical lenght 
+    double eta = kinvis/(Da*l*l); //-----> kinvis/Da*l^2  Brinkman Penalization
 
     //Read Parameters
     void init(const std::string &parameters_file);
@@ -57,19 +61,17 @@ class BrinkPenalAccel:public mfem::VectorCoefficient{
 public:
     BrinkPenalAccel(int dim):mfem::VectorCoefficient(dim){};
     virtual ~BrinkPenalAccel(){};
+    void SetUp(double X,double Y,double Z,double VX,double VY,double VZ,double R,double H);
     void SetVel(mfem::GridFunction* gfvel){vel=gfvel;};
     void SetTime(double tt){t=tt;};
     virtual void Eval(mfem::Vector &a, mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip);
     double Chi(const Vector &X, double t);
     void Create_Chi_Coefficient(ParGridFunction &CChi);
+    bool Piston(const Vector &X, double t);
 
 private:
     mfem::GridFunction* vel = nullptr;
-    double t=0, pos_x=0,star=0;
-    bool done=false;
-    bool Piston_Wall(const Vector &X, double t);
-    bool Piston(const Vector &X, double t);
-    bool Piston_Exit(const Vector &X, double t);
+    double t=0.0,x=0.0;
 };
 
 //Main function
@@ -82,7 +84,7 @@ int main(int argc, char *argv[])
     //std::string parameters_file = "settings/parameters.txt";
     //Parameters.init(parameters_file);
 
-    //Parameters
+    //Aux Variables
     double t = 0.0;
     int vis_print = 0;
     bool last_step = false;
@@ -116,8 +118,9 @@ int main(int argc, char *argv[])
     NavierSolver flowsolver(&pmesh, Parameters.order, Parameters.kinvis);
     flowsolver.EnablePA(true);
     flowsolver.EnableNI(true);
-    flowsolver.EnableVerbose(true);
+    flowsolver.EnableVerbose(false);
 
+    //Tengo algo confundido con las fronteras y la cond inicial
     //Define Velocity Initial Conditions
     ParGridFunction *u_0 = flowsolver.GetCurrentVelocity();
     VectorFunctionCoefficient u_bdr(pmesh.Dimension(), Initial_Velocity);
@@ -131,13 +134,13 @@ int main(int argc, char *argv[])
     //Define Velocity Boundary Conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
-    attr[0] = 1;   attr[1] = 0;    attr[2] = 0;
+    attr[0] = 1;   attr[1] = 0;    attr[2] = 1;
     flowsolver.AddVelDirichletBC(Vel_Boundary_Condition, attr);
 
     //Define  Pressure Boundary Conditions
     Array<int> attr2(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
-    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 1;
+    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 0;
     flowsolver.AddPresDirichletBC(Press_Boundary_Condition, attr2);
 
     //Define Solution Pointers 
@@ -177,9 +180,9 @@ int main(int argc, char *argv[])
     paraview_out.RegisterField("Pressure", p);
     paraview_out.RegisterField("Velocity", u);
     paraview_out.RegisterField("Vorticity", &w);
-    paraview_out.SetCycle(vis_print);
-    paraview_out.SetTime(t);
-    paraview_out.Save();
+
+    if(mpi.Root())
+        std::cout << "step" << "\t" << "t" << "\t" << "dt" << "\t" << "print" << "\n";
 
     //Perform Time Integration
     for (int step = 0; !last_step; ++step)
@@ -198,24 +201,21 @@ int main(int argc, char *argv[])
         piston.SetVel(flowsolver.GetCurrentVelocity());
         piston.SetTime(t);
 
-        //Compute CFL Condition, Must be <= 1
-        /*double cfl = flowsolver.ComputeCFL(*u, Parameters.dt);
-
         if(mpi.Root()){
-            std::cout << "step" << "\t" << "t" << "\t" << "dt" << "\t" << "cfl" << "\n";
-            std::cout << step << "\t" << t << "\t" << Parameters.dt << "\t" << cfl << "\n";
-        }*/
+            std::cout.flush();
+            std::cout << step << "\t" << t << "\t" << Parameters.dt << "\t" << vis_print << "\r";
+        }
 
         //Print Data for Visualization
         if (step%Parameters.vis_freq==0)
         {   
-            vis_print++;
             CurlGridFunctionCoefficient u_curl(u);
             w.ProjectCoefficient(u_curl);
             piston.Create_Chi_Coefficient(Chi);
             paraview_out.SetCycle(vis_print);
             paraview_out.SetTime(t);
             paraview_out.Save();
+            vis_print++;
         }
     }
 
@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 //Configuration functions
-void Config::init(const std::string &parameters_file){
-    /*std::ifstream fparams(parameters_file);
+/*void Config::init(const std::string &parameters_file){
+    std::ifstream fparams(parameters_file);
     serial_refinements = (int) get_next_parameter(fparams);
     parallel_refinements = (int) get_next_parameter(fparams);
     order = (int) get_next_parameter(fparams);
@@ -246,7 +246,7 @@ void Config::init(const std::string &parameters_file){
     kinvis = get_next_parameter(fparams);
     atm_pressure = get_next_parameter(fparams);
     gravity = get_next_parameter(fparams);
-    fparams.close();*/
+    fparams.close();
 }
 double get_next_parameter(std::ifstream &file){
     std::string name_parameter;
@@ -254,16 +254,24 @@ double get_next_parameter(std::ifstream &file){
     std::string string_value;
     getline(file,string_value);
     return stod(string_value);
-}
+}*/
 //Assemble functions
 void Initial_Velocity(const Vector &x, double t, Vector &u)
 {
+   double xi = x(0);
+   double yi = x(1);
+   double zi = x(2);
+
     u(0) = 0.0;
     u(1) = 0.0;
     u(2) = 0.0;
 }
 void Vel_Boundary_Condition(const Vector &x, double t, Vector &u)
 {
+    double xi = x(0);
+    double yi = x(1);
+    double zi = x(2);
+
     u(0) = 0.0;
     u(1) = 0.0;
     u(2) = 0.0;
@@ -274,6 +282,10 @@ double Press_Boundary_Condition(const Vector &x, double t)
 }
 void Gravity(const Vector &x, double t, Vector &a)
 {
+   double xi = x(0);
+   double yi = x(1);
+   double zi = x(2);
+
     a(0) = 0.0;
     a(1) = 0.0;
     a(2) = -Parameters.gravity;
@@ -285,44 +297,38 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     Vector U0;         Vector U;          Vector X;
     
     //Set Body and Fluid Velocity and Acceleration 
-    U0.SetSize(GetVDim()); U0(1)=0; U0(2)=0;
-    U.SetSize(GetVDim());
-    a.SetSize(GetVDim());
+    U0.SetSize(GetVDim()); U0(0)=0; U0(1)=0; U0(2)=0;
+    U.SetSize(GetVDim());  U(0)=0;  U(1)=0;  U(2)=0;
+    a.SetSize(GetVDim());  a(0)=0;  a(1)=0;  a(2)=0;
 
-    //Armonic motion to the right
-    pos_x = Parameters.lenght + Parameters.lenght*std::sin(Parameters.omega*t+3*M_PI/2) + Parameters.thickness/2+star;
-    U0(0) = Parameters.lenght*Parameters.omega*std::cos(Parameters.omega*t+3*M_PI/2);
-    if(pos_x >= Parameters.lenght - Parameters.thickness/2)
-    {	
-    	pos_x = Parameters.lenght - Parameters.thickness/2;
-    	U0(0)=0;
-        star = 2*(Parameters.lenght - Parameters.thickness/2);
-    }
-
-    //Get the physical coordinates at integration point
+    //Get the physical coordinates of integration point
     T.Transform(ip,X); 
 
-    //Get the fluid velocity at the integration point
-    vel->GetVectorValue(T,ip,U);
-
-    //Calculate if the object is present at the integration point
+    //Check For the object
     double chi = Chi(X,t);
 
-    //If piston wall or exit, v_object=0
-    if (Piston_Wall(X,t) || Piston_Exit(X,t))
-    	U0(0)=0;
+    //Get Fluid Velocity
+    vel->GetVectorValue(T,ip,U);
+
+    double dist = 1.5;
+    x=Parameters.Tube_L*dist;
+    if (Piston(X,t) && t<=Parameters.Piston_P/4)
+    {
+        x=Parameters.Tube_L*(dist+std::sin(Parameters.Piston_W*t+3*M_PI_2));
+        U0(0)=Parameters.Tube_L*Parameters.Piston_W*std::cos(Parameters.Piston_W*t+3*M_PI_2);
+    }
 
     //The - Sing is Already Included
-    a(0)=Parameters.eta*(U0(0)-U(0))*chi;
-    a(1)=Parameters.eta*(U0(1)-U(1))*chi;
-    a(2)=Parameters.eta*(U0(2)-U(2))*chi;
+    a(0)=chi*Parameters.eta*(U0(0)-U(0));
+    a(1)=chi*Parameters.eta*(U0(1)-U(1));
+    a(2)=chi*Parameters.eta*(U0(2)-U(2));
 }
 double BrinkPenalAccel::Chi(const Vector &X, double t)
-{	
-    if (Piston_Wall(X,t) || Piston(X,t) || Piston_Exit(X,t))
-    	return 1;
+{
+    if(Piston(X,t))
+        return 1;
 
-    return 0; 
+    return 0;
 }
 void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
 {   
@@ -331,25 +337,10 @@ void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
     FunctionCoefficient chi(Create_Chi);
     CChi.ProjectCoefficient(chi);
 }
-bool BrinkPenalAccel::Piston_Wall(const Vector &X, double t)
-{
-	if (std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<Parameters.r_ext && std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)>Parameters.r_int && X(0)<Parameters.lenght)
-		return true;
-
-	return false;
-}
-
 bool BrinkPenalAccel::Piston(const Vector &X, double t)
-{
-	if (std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<Parameters.r_int && X(0)< pos_x + Parameters.thickness/2 )
-		return true;
+{   
+    if(std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<std::pow(Parameters.Piston_R,2) && std::abs(X(0)-x) < Parameters.Piston_T)
+        return true;
 
-	return false;
-}
-bool BrinkPenalAccel::Piston_Exit(const Vector &X, double t)
-{
-	if (std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<Parameters.r_ext && std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)>Parameters.r_open && X(0)>Parameters.lenght-Parameters.thickness/2 && X(0)<Parameters.lenght+Parameters.thickness/2)
-		return true;
-
-	return false;
+    return false;
 }
