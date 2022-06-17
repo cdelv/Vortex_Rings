@@ -28,6 +28,7 @@ struct Config
     double Piston_T=0.05;
     double Piston_W=2;
     double Piston_P=2*M_PI/Piston_W;
+    double Delta = 1000;
 
     //Tube Parameters
     double Tube_R = 0.2;
@@ -61,17 +62,18 @@ class BrinkPenalAccel:public mfem::VectorCoefficient{
 public:
     BrinkPenalAccel(int dim):mfem::VectorCoefficient(dim){};
     virtual ~BrinkPenalAccel(){};
-    void SetUp(double X,double Y,double Z,double VX,double VY,double VZ,double R,double H);
-    void SetVel(mfem::GridFunction* gfvel){vel=gfvel;};
-    void SetTime(double tt){t=tt;};
     virtual void Eval(mfem::Vector &a, mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip);
+    void SetVel(mfem::GridFunction* gfvel){vel=gfvel;};
+    void SetTime(double tt);
+    double Piston(const Vector &X, double t);
+    double Tube(const Vector &X, double t);
+    double End(const Vector &X, double t);
     double Chi(const Vector &X, double t);
     void Create_Chi_Coefficient(ParGridFunction &CChi);
-    bool Piston(const Vector &X, double t);
 
 private:
     mfem::GridFunction* vel = nullptr;
-    double t=0.0,x=0.0;
+    double t=0.0,x=0.0,vx=0.0;
 };
 
 //Main function
@@ -310,26 +312,57 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     //Get Fluid Velocity
     vel->GetVectorValue(T,ip,U);
 
-    double dist = 1.3;
-    if (Piston(X,t) && t<=Parameters.Piston_P/4)
-    {
-        x=Parameters.Tube_L*(dist+std::sin(Parameters.Piston_W*t+3*M_PI_2));
-        U0(0)=Parameters.Tube_L*Parameters.Piston_W*std::cos(Parameters.Piston_W*t+3*M_PI_2);
-    }
-    else
-    	x=Parameters.Tube_L*dist;
+    //Only de Piston Should Move
+    U0(0)=vx*Piston(X,t);
 
     //The - Sing is Already Included
     a(0)=chi*Parameters.eta*(U0(0)-U(0));
     a(1)=chi*Parameters.eta*(U0(1)-U(1));
     a(2)=chi*Parameters.eta*(U0(2)-U(2));
 }
+void BrinkPenalAccel::SetTime(double tt)
+{
+	//Update Time
+	t=tt;
+
+	//Update Piston Position and Velocity
+	double dist = 1.5;
+	if (t<=Parameters.Piston_P/4)
+	{
+	    x=Parameters.Tube_L*(dist+std::sin(Parameters.Piston_W*t+3*M_PI_2));
+	    vx=Parameters.Tube_L*Parameters.Piston_W*std::cos(Parameters.Piston_W*t+3*M_PI_2);
+	}
+	else{
+		x=Parameters.Tube_L*dist;
+		vx=0;
+	}
+}
+double BrinkPenalAccel::Piston(const Vector &X, double t)
+{   
+    double r = std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2);
+    double c = -0.5*std::tanh(Parameters.Delta*(r-std::pow(Parameters.Piston_R,2)))+0.5; //Disk Radius
+    double h = -0.5*std::tanh(Parameters.Delta*(std::abs(X(0)-x)-Parameters.Piston_T))+0.5; //Disk Thickness
+    return c*h;
+}
+double BrinkPenalAccel::Tube(const Vector &X, double t)
+{   
+	double mean = (Parameters.Piston_R+Parameters.Tube_R)*0.5;
+    double r = std::sqrt(std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2));
+    double c = -0.5*std::tanh(Parameters.Delta*(std::abs(r-mean)-(Parameters.Tube_R-Parameters.Piston_R)*0.5))+0.5; //Wall thickness
+    double h = -0.5*std::tanh(Parameters.Delta*(X(0)-Parameters.Tube_L))+0.5; //Tube Lenght
+    return c*h;
+}
+double BrinkPenalAccel::End(const Vector &X, double t)
+{   
+	double mean = (Parameters.End_R+Parameters.Tube_R)*0.5;
+    double r = std::sqrt(std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)); 
+    double c = -0.5*std::tanh(Parameters.Delta*(std::abs(r-mean)-(Parameters.Tube_R-Parameters.End_R)*0.5))+0.5; //End Opnening
+    double h = -0.5*std::tanh(Parameters.Delta*(std::abs(X(0)-Parameters.Tube_L)-Parameters.Piston_T))+0.5; //Face thickness
+    return c*h;
+}
 double BrinkPenalAccel::Chi(const Vector &X, double t)
 {
-    if(Piston(X,t))
-        return 1;
-
-    return 0;
+    return Piston(X,t)+Tube(X,t)+End(X,t);
 }
 void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
 {   
@@ -337,11 +370,4 @@ void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
     auto Create_Chi = [=](const Vector &X, double t) mutable {return Chi(X,t);};
     FunctionCoefficient chi(Create_Chi);
     CChi.ProjectCoefficient(chi);
-}
-bool BrinkPenalAccel::Piston(const Vector &X, double t)
-{   
-    if(std::pow(X(1)-Parameters.Ly/2,2)+std::pow(X(2)-Parameters.Lz/2,2)<std::pow(Parameters.Piston_R,2) && std::abs(X(0)-x) < Parameters.Piston_T)
-        return true;
-
-    return false;
 }
