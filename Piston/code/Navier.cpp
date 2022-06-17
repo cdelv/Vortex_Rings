@@ -12,6 +12,7 @@ struct Config
     int serial_refinements = 1;
     int parallel_refinements = 1;
     int order = 2;
+    double Delta = 1000;
 
     //Time Parameters
     int vis_freq = 50;
@@ -24,16 +25,15 @@ struct Config
     double Lz = 1;
 
     //Piston Parameters
-    double Piston_R =0.15;
-    double Piston_T=0.05;
-    double Piston_W=2;
-    double Piston_P=2*M_PI/Piston_W;
-    double Delta = 1000;
+    double Piston_R =0.15; //Radius
+    double Piston_T=0.05; //Thickness
+    double Piston_W=2;    //Omega
+    double Piston_P=2*M_PI/Piston_W; //Period
 
-    //Tube Parameters
-    double Tube_R = 0.2;
-    double Tube_L = 0.5;
-    double Tube_T = 0.05;
+    //Tube Parameters 
+    double Tube_R = 0.2; //Radius
+    double Tube_L = 0.5; //Lenght
+    double Tube_T = 0.05; //Thickness (REVISAR)
 
     //Piston Outflow Parameters
     double End_R = 0.2;
@@ -44,7 +44,7 @@ struct Config
     double gravity = 9.8;
     double Da = 5e-6;               //Darcy Number, for Solid Obj, 1e-6 < Da < 1e-5
     double l = Tube_L;             // critical lenght 
-    double eta = kinvis/(Da*l*l); //-----> kinvis/Da*l^2  Brinkman Penalization
+    //double eta = kinvis/(Da*l*l); //-----> kinvis/Da*l^2  Brinkman Penalization
 
     //Read Parameters
     void init(const std::string &parameters_file);
@@ -69,6 +69,7 @@ public:
     double Tube(const Vector &X, double t);
     double End(const Vector &X, double t);
     double Chi(const Vector &X, double t);
+    double Impermeability(const Vector &X, double t);
     void Create_Chi_Coefficient(ParGridFunction &CChi);
 
 private:
@@ -308,6 +309,7 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
 
     //Check For the object
     double chi = Chi(X,t);
+    double eta = Impermeability(X,t);
 
     //Get Fluid Velocity
     vel->GetVectorValue(T,ip,U);
@@ -316,9 +318,9 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
     U0(0)=vx*Piston(X,t);
 
     //The - Sing is Already Included
-    a(0)=chi*Parameters.eta*(U0(0)-U(0));
-    a(1)=chi*Parameters.eta*(U0(1)-U(1));
-    a(2)=chi*Parameters.eta*(U0(2)-U(2));
+    a(0)=chi*eta*(U0(0)-U(0));
+    a(1)=chi*eta*(U0(1)-U(1));
+    a(2)=chi*eta*(U0(2)-U(2));
 }
 void BrinkPenalAccel::SetTime(double tt)
 {
@@ -364,6 +366,10 @@ double BrinkPenalAccel::Chi(const Vector &X, double t)
 {
     return Piston(X,t)+Tube(X,t)+End(X,t);
 }
+//Inverse of the brinkman penalization permeability
+double BrinkPenalAccel::Impermeability(const Vector &X, double t){
+    return Parameters.Da + pow(1-Chi(X,t), 2)/(pow(Chi(X,t), 3) + Parameters.Da);
+} 
 void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
 {   
     //FunctionCoefficient Require a Static Function
