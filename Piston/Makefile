@@ -5,7 +5,7 @@ include ../local_config.mk
 SANITFLAGS= -fsanitize=address -fsanitize=leak -fsanitize=undefined
 VALGRINDFLAGS= --tool=memcheck --track-origins=yes --leak-check=full -s
 CXX = mpic++
-FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL) $(HYPRE_INC) $(SUNDIALS_INC) #-g #$(SANITFLAGS)
+FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL) $(HYPRE_INC) $(SUNDIALS_INC) -g #$(SANITFLAGS)
 RUN = mpirun -np $(PROCCESORS) ./
 SOURCES = $(wildcard code/*.cpp)
 DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)

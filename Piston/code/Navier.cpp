@@ -12,12 +12,11 @@ struct Config
     int serial_refinements = 1;
     int parallel_refinements = 1;
     int order = 2;
-    double Delta = 1000;
 
     //Time Parameters
     int vis_freq = 50;
     double dt = 0.0001;
-    double t_final = 3;
+    double t_final = 3*0.0001;
 
     //Box Parameters
     double Lx = 2;
@@ -44,7 +43,9 @@ struct Config
     double gravity = 9.8;
     double Da = 5e-6;               //Darcy Number, for Solid Obj, 1e-6 < Da < 1e-5
     double l = Tube_L;             // critical lenght 
-    //double eta = kinvis/(Da*l*l); //-----> kinvis/Da*l^2  Brinkman Penalization
+    double eta = kinvis/(Da*l*l); //-----> kinvis/Da*l^2  Brinkman Penalization
+
+    double Delta = 1/Da;
 
     //Read Parameters
     void init(const std::string &parameters_file);
@@ -61,7 +62,6 @@ void Gravity(const Vector &x, double t, Vector &a);
 class BrinkPenalAccel:public mfem::VectorCoefficient{
 public:
     BrinkPenalAccel(int dim):mfem::VectorCoefficient(dim){};
-    virtual ~BrinkPenalAccel(){};
     virtual void Eval(mfem::Vector &a, mfem::ElementTransformation &T, const mfem::IntegrationPoint &ip);
     void SetVel(mfem::GridFunction* gfvel){vel=gfvel;};
     void SetTime(double tt);
@@ -91,6 +91,8 @@ int main(int argc, char *argv[])
     double t = 0.0;
     int vis_print = 0;
     bool last_step = false;
+    NavierSolver *flowsolver = nullptr;
+    BrinkPenalAccel *piston = nullptr;
 
     //Load Mesh (Pointer to Delete it After Parallel Mesh is Created)
     Mesh *mesh = new Mesh("mesh.msh");
@@ -118,19 +120,19 @@ int main(int argc, char *argv[])
     ParFiniteElementSpace pfes = ParFiniteElementSpace(&pmesh, &pfec);                   //Scalar Space
 
     //Define Navier Solver
-    NavierSolver flowsolver(&pmesh, Parameters.order, Parameters.kinvis);
-    flowsolver.EnablePA(true);
-    flowsolver.EnableNI(true);
-    flowsolver.EnableVerbose(false);
+    flowsolver = new NavierSolver(&pmesh, Parameters.order, Parameters.kinvis);
+    flowsolver->EnablePA(true);
+    flowsolver->EnableNI(true);
+    flowsolver->EnableVerbose(false);
 
     //Tengo algo confundido con las fronteras y la cond inicial
     //Define Velocity Initial Conditions
-    ParGridFunction *u_0 = flowsolver.GetCurrentVelocity();
+    ParGridFunction *u_0 = flowsolver->GetCurrentVelocity();
     VectorFunctionCoefficient u_bdr(pmesh.Dimension(), Initial_Velocity);
     u_0->ProjectCoefficient(u_bdr);
 
     //Define Pressure Initial Conditions
-    ParGridFunction *p_0 = flowsolver.GetCurrentPressure();
+    ParGridFunction *p_0 = flowsolver->GetCurrentPressure();
     ConstantCoefficient  p_bdr(Parameters.atm_pressure);
     p_0->ProjectCoefficient(p_bdr);
 
@@ -138,17 +140,17 @@ int main(int argc, char *argv[])
     Array<int> attr(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
     attr[0] = 1;   attr[1] = 0;    attr[2] = 0;
-    flowsolver.AddVelDirichletBC(Vel_Boundary_Condition, attr);
+    flowsolver->AddVelDirichletBC(Vel_Boundary_Condition, attr);
 
     //Define  Pressure Boundary Conditions
     Array<int> attr2(pmesh.bdr_attributes.Max());
     //Inflow       Sides           Outflow
     attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 1;
-    flowsolver.AddPresDirichletBC(Press_Boundary_Condition, attr2);
+    flowsolver->AddPresDirichletBC(Press_Boundary_Condition, attr2);
 
     //Define Solution Pointers 
-    ParGridFunction *u = flowsolver.GetCurrentVelocity(); //Velocity Solution
-    ParGridFunction *p = flowsolver.GetCurrentPressure(); //Pressure Solution
+    ParGridFunction *u = flowsolver->GetCurrentVelocity(); //Velocity Solution
+    ParGridFunction *p = flowsolver->GetCurrentPressure(); //Pressure Solution
 
     //Calculate Vorticity
     ParGridFunction w = ParGridFunction(&vfes);
@@ -163,17 +165,17 @@ int main(int argc, char *argv[])
     //flowsolver.AddAccelTerm(Gravity,domain_attr);  
 
     //Create Solid object
-    BrinkPenalAccel piston(pmesh.Dimension());
-    piston.SetVel(flowsolver.GetCurrentVelocity());
-    piston.SetTime(t);
-    flowsolver.AddAccelTerm(&piston,domain_attr);   
+    piston = new BrinkPenalAccel(pmesh.Dimension());
+    piston->SetVel(flowsolver->GetCurrentVelocity());
+    piston->SetTime(t);
+    flowsolver->AddAccelTerm(piston,domain_attr);   
 
     //Calculate Object Contour
     ParGridFunction Chi = ParGridFunction(&pfes);
-    piston.Create_Chi_Coefficient(Chi);
+    piston->Create_Chi_Coefficient(Chi);
 
     //Set Up Solver (Must be After Adding Accel Terms)
-    flowsolver.Setup(Parameters.dt);
+    flowsolver->Setup(Parameters.dt);
 
     //Paraview Visualization
     ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", &pmesh);
@@ -195,14 +197,14 @@ int main(int argc, char *argv[])
             last_step = true;
 
         //Time Step
-        flowsolver.Step(t, Parameters.dt, step);
+        flowsolver->Step(t, Parameters.dt, step);
 
         //Update Time of The Velocity Boundary Condition
         u_bdr.SetTime(t);
 
         //Update The Solid Object
-        piston.SetVel(flowsolver.GetCurrentVelocity());
-        piston.SetTime(t);
+        piston->SetVel(flowsolver->GetCurrentVelocity());
+        piston->SetTime(t);
 
         if(mpi.Root()){
             std::cout.flush();
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
         {   
             CurlGridFunctionCoefficient u_curl(u);
             w.ProjectCoefficient(u_curl);
-            piston.Create_Chi_Coefficient(Chi);
+            piston->Create_Chi_Coefficient(Chi);
             paraview_out.SetCycle(vis_print);
             paraview_out.SetTime(t);
             paraview_out.Save();
@@ -222,10 +224,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    flowsolver.PrintTimingData();
+    flowsolver->PrintTimingData();
 
     //with MPI sesion theres no neet to Finalize MPI
     //Free memory, Dont have any pointer yet
+
+    delete flowsolver;
 
     return 0;
 }
@@ -309,7 +313,7 @@ void BrinkPenalAccel::Eval(mfem::Vector &a, mfem::ElementTransformation &T, cons
 
     //Check For the object
     double chi = Chi(X,t);
-    double eta = Impermeability(X,t);
+    double eta = Parameters.eta;// Impermeability(X,t);
 
     //Get Fluid Velocity
     vel->GetVectorValue(T,ip,U);
@@ -364,12 +368,15 @@ double BrinkPenalAccel::End(const Vector &X, double t)
 }
 double BrinkPenalAccel::Chi(const Vector &X, double t)
 {
-    return Piston(X,t)+Tube(X,t)+End(X,t);
+    return Piston(X,t);//+Tube(X,t)+End(X,t);
 }
 //Inverse of the brinkman penalization permeability
 double BrinkPenalAccel::Impermeability(const Vector &X, double t){
-    return Parameters.Da + pow(1-Chi(X,t), 2)/(pow(Chi(X,t), 3) + Parameters.Da);
+    double Phase = 1-Chi(X,t);
+    //return Epsilon + pow(Chi(X,t), 2)/(pow(1-Chi(X,t), 3) + Epsilon);
+    return Parameters.Da + pow(1-Phase, 2)/(pow(Phase, 3) + Parameters.Da);
 } 
+
 void BrinkPenalAccel::Create_Chi_Coefficient(ParGridFunction &CChi)
 {   
     //FunctionCoefficient Require a Static Function
