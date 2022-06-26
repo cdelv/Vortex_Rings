@@ -88,10 +88,10 @@ int main(int argc, char *argv[])
    ParMesh *pmesh = new ParMesh();
    {
    //Load Mesh (Pointer to Delete it After Parallel Mesh is Created)
-   int n = 10;
-   double Lx = 5.;   
-   double Ly = 5.;
-   double Lz = 5.;
+   int n = 20;
+   double Lx = 10.;   
+   double Ly = 10.;
+   double Lz = 10.;
    Mesh mesh = Mesh::MakeCartesian3D(n, n, n, Element::QUADRILATERAL, Lx, Ly, Lz);
    mesh.EnsureNodes();
    int dim = mesh.Dimension();
@@ -150,9 +150,9 @@ int main(int argc, char *argv[])
 
 void LinealVortex(const double t, Vector &u){
     double R = 2.;
-    double x0 = 2.5;
-    double y0 = 2.5;
-    double z0 = 2.5;
+    double x0 = 5;
+    double y0 = 5;
+    double z0 = 5;
     u(0) = x0;
     u(1) = y0 + R*std::cos(t);
     u(2) = z0 + R*std::sin(t);
@@ -168,9 +168,9 @@ void Initial_Vorticity(const Vector &x, Vector &u)
 {
  
     double a = 0.5;
-    double x0 = 2.5;
-    double y0 = 2.5;
-    double z0 = 2.5;
+    double x0 = 5;
+    double y0 = 5;
+    double z0 = 5;
  
     double xi = x(0);
     double yi = x(1);
