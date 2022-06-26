@@ -9,7 +9,7 @@ using namespace navier;
 struct Config
 {
     //Numerical Method Parameters
-    int serial_refinements = 1;
+    int serial_refinements = 0;
     int parallel_refinements = 1;
     int order = 2;
 
@@ -133,14 +133,14 @@ int main(int argc, char *argv[])
 
     //Define Velocity Boundary Conditions
     Array<int> attr(pmesh.bdr_attributes.Max());
-    //Inflow       Sides           Outflow
-    attr[0] = 1;   attr[1] = 0;    attr[2] = 0;
+    //Inflow      Outflow        Side down      Side up       Side left      Side right
+    attr[4] = 1;  attr[2] = 0;   attr[0] = 0;   attr[5] = 0;  attr[1] = 0;   attr[3] = 0;
     flowsolver.AddVelDirichletBC(Vel_Boundary_Condition, attr);
 
     //Define  Pressure Boundary Conditions
     Array<int> attr2(pmesh.bdr_attributes.Max());
-    //Inflow       Sides           Outflow
-    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 1;
+    //Inflow       Outflow         Side down       Side up        Side left       Side right
+    attr2[4] = 0;  attr2[2] = 1;   attr2[0] = 1;   attr2[5] = 1;  attr2[1] = 1;   attr2[3] = 1;
     flowsolver.AddPresDirichletBC(Press_Boundary_Condition, attr2);
 
     //Define Solution Pointers 
