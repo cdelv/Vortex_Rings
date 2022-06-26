@@ -195,9 +195,9 @@ int main(int argc, char *argv[])
         //Solve the linear system Ax=B             
         HyprePCG *pcg = new HyprePCG(A);           
         pcg->SetPreconditioner(*amg);              
-        pcg->SetPrintLevel(0);                     
+        pcg->SetPrintLevel(2);                     
         pcg->SetTol(1e-12);                        
-        pcg->SetMaxIter(200);                      
+        pcg->SetMaxIter(20000);                      
         pcg->Mult(B, Psi);                         
                                                    
         //Recover the solution on each proccesor   
