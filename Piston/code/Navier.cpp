@@ -9,14 +9,15 @@ using namespace navier;
 struct Config
 {
     //Numerical Method Parameters
-    int serial_refinements = 1;
+    int n = 6;
+    int serial_refinements = 0;
     int parallel_refinements = 1;
     int order = 2;
 
     //Time Parameters
     int vis_freq = 50;
     double dt = 0.0001;
-    double t_final = 3*0.0001;
+    double t_final = 0.002;
 
     //Box Parameters
     double Lx = 2;
@@ -94,33 +95,35 @@ int main(int argc, char *argv[])
     NavierSolver *flowsolver = nullptr;
     BrinkPenalAccel *piston = nullptr;
 
+    ParMesh *pmesh = new ParMesh();
+    {
     //Load Mesh (Pointer to Delete it After Parallel Mesh is Created)
-    Mesh *mesh = new Mesh("mesh.msh");
-    mesh->EnsureNodes();
-    int dim = mesh->Dimension();
+    Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);;
+    mesh.EnsureNodes();
+    int dim = mesh.Dimension();
 
     //Refine Serial Mesh
     for (int i = 0; i < Parameters.serial_refinements; ++i)
-        mesh->UniformRefinement();
+        mesh.UniformRefinement();
 
     //Make Parallel Mesh
-    ParMesh pmesh = ParMesh(MPI_COMM_WORLD, *mesh);
-    delete mesh;
+    pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
+    }
     
     //Refine Parallel Mesh
     for (int ii = 0; ii < Parameters.parallel_refinements; ii++)
-        pmesh.UniformRefinement();
+        pmesh->UniformRefinement();
 
     //Create H1 Element Collections
-    H1_FECollection vfec = H1_FECollection(Parameters.order, pmesh.Dimension());
+    H1_FECollection vfec = H1_FECollection(Parameters.order, pmesh->Dimension());
     H1_FECollection pfec = H1_FECollection(Parameters.order);
 
     //Create Finite Element Spaces
-    ParFiniteElementSpace vfes = ParFiniteElementSpace(&pmesh, &vfec, pmesh.Dimension()); //Vector Space
-    ParFiniteElementSpace pfes = ParFiniteElementSpace(&pmesh, &pfec);                   //Scalar Space
+    ParFiniteElementSpace vfes = ParFiniteElementSpace(pmesh, &vfec, pmesh->Dimension()); //Vector Space
+    ParFiniteElementSpace pfes = ParFiniteElementSpace(pmesh, &pfec);                   //Scalar Space
 
     //Define Navier Solver
-    flowsolver = new NavierSolver(&pmesh, Parameters.order, Parameters.kinvis);
+    flowsolver = new NavierSolver(pmesh, Parameters.order, Parameters.kinvis);
     flowsolver->EnablePA(true);
     flowsolver->EnableNI(true);
     flowsolver->EnableVerbose(false);
@@ -128,7 +131,7 @@ int main(int argc, char *argv[])
     //Tengo algo confundido con las fronteras y la cond inicial
     //Define Velocity Initial Conditions
     ParGridFunction *u_0 = flowsolver->GetCurrentVelocity();
-    VectorFunctionCoefficient u_bdr(pmesh.Dimension(), Initial_Velocity);
+    VectorFunctionCoefficient u_bdr(pmesh->Dimension(), Initial_Velocity);
     u_0->ProjectCoefficient(u_bdr);
 
     //Define Pressure Initial Conditions
@@ -137,16 +140,17 @@ int main(int argc, char *argv[])
     p_0->ProjectCoefficient(p_bdr);
 
     //Define Velocity Boundary Conditions
-    Array<int> attr(pmesh.bdr_attributes.Max());
-    //Inflow       Sides           Outflow
-    attr[0] = 1;   attr[1] = 0;    attr[2] = 0;
+    Array<int> attr(pmesh->bdr_attributes.Max());
+    //Inflow      Outflow        Side down      Side up       Side left      Side right
+    attr[4] = 1;  attr[2] = 0;   attr[0] = 0;   attr[5] = 0;  attr[1] = 0;   attr[3] = 0;
     flowsolver->AddVelDirichletBC(Vel_Boundary_Condition, attr);
 
     //Define  Pressure Boundary Conditions
-    Array<int> attr2(pmesh.bdr_attributes.Max());
-    //Inflow       Sides           Outflow
-    attr2[0] = 0;  attr2[1] = 1;   attr2[2] = 1;
+    Array<int> attr2(pmesh->bdr_attributes.Max());
+    //Inflow       Outflow         Side down       Side up        Side left       Side right
+    attr2[4] = 0;  attr2[2] = 1;   attr2[0] = 1;   attr2[5] = 1;  attr2[1] = 1;   attr2[3] = 1;
     flowsolver->AddPresDirichletBC(Press_Boundary_Condition, attr2);
+
 
     //Define Solution Pointers 
     ParGridFunction *u = flowsolver->GetCurrentVelocity(); //Velocity Solution
@@ -158,14 +162,14 @@ int main(int argc, char *argv[])
     w.ProjectCoefficient(curl_u);
 
     //Create Domain Attr Array
-    Array<int> domain_attr(pmesh.bdr_attributes.Max()); 
+    Array<int> domain_attr(pmesh->bdr_attributes.Max());
     domain_attr=1;
 
     //Add Gravity Acceleration Term
     //flowsolver.AddAccelTerm(Gravity,domain_attr);  
 
     //Create Solid object
-    piston = new BrinkPenalAccel(pmesh.Dimension());
+    piston = new BrinkPenalAccel(pmesh->Dimension());
     piston->SetVel(flowsolver->GetCurrentVelocity());
     piston->SetTime(t);
     flowsolver->AddAccelTerm(piston,domain_attr);   
@@ -178,7 +182,7 @@ int main(int argc, char *argv[])
     flowsolver->Setup(Parameters.dt);
 
     //Paraview Visualization
-    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", &pmesh);
+    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", pmesh);
     paraview_out.SetLevelsOfDetail(Parameters.order);
     paraview_out.SetDataFormat(VTKFormat::BINARY);
     paraview_out.RegisterField("Object", &Chi);
@@ -229,6 +233,7 @@ int main(int argc, char *argv[])
     //with MPI sesion theres no neet to Finalize MPI
     //Free memory, Dont have any pointer yet
 
+    delete pmesh;
     delete flowsolver;
 
     return 0;
