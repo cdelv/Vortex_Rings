@@ -68,6 +68,7 @@ using namespace mfem;
 using namespace mfem::electromagnetics;
 
 void current_ring(const Vector &, Vector &);
+void Initial_Vorticity(const Vector &x, Vector &u);
 
 int main(int argc, char *argv[])
 {
@@ -110,14 +111,14 @@ int main(int argc, char *argv[])
    H1_FECollection vfec = H1_FECollection(order, pmesh->Dimension());
    ParFiniteElementSpace vfes = ParFiniteElementSpace(pmesh, &vfec, pmesh->Dimension());
    ParGridFunction w = ParGridFunction(&vfes);
-   VectorFunctionCoefficient w_bdr(pmesh->Dimension(), current_ring);
+   VectorFunctionCoefficient w_bdr(pmesh->Dimension(), Initial_Vorticity);
    w.ProjectCoefficient(w_bdr);
 
    // Create a coefficient describing the magnetic permeability
    ConstantCoefficient muInvCoef(1.);
 
    // Create the Magnetostatic solver
-   TeslaSolver Tesla(*pmesh, order, kbcs, vbcs, vbcv, muInvCoef, NULL, current_ring, NULL);
+   TeslaSolver Tesla(*pmesh, order, kbcs, vbcs, vbcv, muInvCoef, NULL, Initial_Vorticity, NULL);
 
    // Display the current number of DoFs in each finite element space
    Tesla.PrintSizes();
@@ -145,6 +146,45 @@ int main(int argc, char *argv[])
    int prob_size = Tesla.GetProblemSize();
 
    return 0;
+}
+
+void LinealVortex(const double t, Vector &u){
+    double R = 2.;
+    double x0 = 2.5;
+    double y0 = 2.5;
+    double z0 = 2.5;
+    u(0) = x0;
+    u(1) = y0 + R*std::cos(t);
+    u(2) = z0 + R*std::sin(t);
+}
+ 
+void TangentVortex(const double t, Vector &u){
+    u(0) = 0.;
+    u(1) = -std::sin(t);
+    u(2) = std::cos(t);
+}
+ 
+void Initial_Vorticity(const Vector &x, Vector &u)
+{
+ 
+    double a = 0.5;
+    double x0 = 2.5;
+    double y0 = 2.5;
+    double z0 = 2.5;
+ 
+    double xi = x(0);
+    double yi = x(1);
+    double zi = x(2);
+    double theta = std::atan2(zi-z0, yi-y0);
+   
+    LinealVortex(theta, u);   
+    double r = u.DistanceTo(x);                        
+ 
+    if (r <= a){
+        TangentVortex(theta, u);
+        u *= 1-r/a;   
+    } else
+        u = 0.;
 }
 
 // An annular ring of current density.  The ring has two axis end
