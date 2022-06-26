@@ -77,10 +77,6 @@ static Vector ms_params_(0);  // Center, Inner and Outer Radii, and
 double magnetic_shell(const Vector &);
 double magnetic_shell_inv(const Vector & x) { return 1.0/magnetic_shell(x); }
 
-// Current Density Function
-static Vector cr_params_(0);  // Axis Start, Axis End, Inner Ring Radius,
-//                               Outer Ring Radius, and Total Current
-//                               of current ring (annulus)
 void current_ring(const Vector &, Vector &);
 
 // Magnetization
@@ -140,8 +136,8 @@ int main(int argc, char *argv[])
                   "Piecewise values of Permeability");
    args.AddOption(&ms_params_, "-ms", "--magnetic-shell-params",
                   "Center, Inner Radius, Outer Radius, and Permeability of Magnetic Shell");
-   args.AddOption(&cr_params_, "-cr", "--current-ring-params",
-                  "Axis End Points, Inner Radius, Outer Radius and Total Current of Annulus");
+   //args.AddOption(&cr_params_, "-cr", "--current-ring-params",
+   //               "Axis End Points, Inner Radius, Outer Radius and Total Current of Annulus");
    args.AddOption(&bm_params_, "-bm", "--bar-magnet-params",
                   "Axis End Points, Radius, and Magnetic Field of Cylindrical Magnet");
    args.AddOption(&ha_params_, "-ha", "--halbach-array-params",
@@ -173,191 +169,52 @@ int main(int argc, char *argv[])
       args.PrintOptions(cout);
    }
 
-   // Read the (serial) mesh from the given mesh file on all processors.  We
-   // can handle triangular, quadrilateral, tetrahedral, hexahedral, surface
-   // and volume meshes with the same code.
-   Mesh *mesh = new Mesh(mesh_file, 1, 1);
-
-   if (Mpi::Root())
+   ParMesh *pmesh = new ParMesh();
    {
-      cout << "Starting initialization." << endl;
+   //Load Mesh (Pointer to Delete it After Parallel Mesh is Created)
+   int n = 6;
+   double Lx = 2.;   
+   double Ly = 1.;
+   double Lz = 1.;
+   Mesh mesh = Mesh::MakeCartesian3D(2*n, n, n, Element::QUADRILATERAL, Lx, Ly, Lz);
+   mesh.EnsureNodes();
+   int dim = mesh.Dimension();
+
+   //Refine Serial Mesh
+   for (int i = 0; i < serial_ref_levels; ++i)
+       mesh.UniformRefinement();
+
+   //Make Parallel Mesh
+   pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
    }
-
-   // Project a NURBS mesh to a piecewise-quadratic curved mesh
-   if (mesh->NURBSext)
-   {
-      mesh->UniformRefinement();
-      if (serial_ref_levels > 0) { serial_ref_levels--; }
-
-      mesh->SetCurvature(2);
-   }
-
-   // Ensure that quad and hex meshes are treated as non-conforming.
-   mesh->EnsureNCMesh();
-
-   // Refine the serial mesh on all processors to increase the resolution. In
-   // this example we do 'ref_levels' of uniform refinement.
-   for (int l = 0; l < serial_ref_levels; l++)
-   {
-      mesh->UniformRefinement();
-   }
-
-   // Define a parallel mesh by a partitioning of the serial mesh. Refine
-   // this mesh further in parallel to increase the resolution. Once the
-   // parallel mesh is defined, the serial mesh can be deleted.
-   ParMesh pmesh(MPI_COMM_WORLD, *mesh);
-   delete mesh;
-
-   // Refine this mesh in parallel to increase the resolution.
-   int par_ref_levels = parallel_ref_levels;
-   for (int l = 0; l < par_ref_levels; l++)
-   {
-      pmesh.UniformRefinement();
-   }
-   // Make sure tet-only meshes are marked for local refinement.
-   pmesh.Finalize(true);
-
-   // If values for Voltage BCs were not set issue a warning and exit
-   if ( ( vbcs.Size() > 0 && kbcs.Size() == 0 ) ||
-        ( kbcs.Size() > 0 && vbcs.Size() == 0 ) ||
-        ( vbcv.Size() < vbcs.Size() ) )
-   {
-      if ( Mpi::Root() )
-      {
-         cout << "The surface current (K) boundary condition requires "
-              << "surface current boundary condition surfaces (with -kbcs), "
-              << "voltage boundary condition surface (with -vbcs), "
-              << "and voltage boundary condition values (with -vbcv)."
-              << endl;
-      }
-      return 3;
-   }
+   
+   //Refine Parallel Mesh
+   for (int ii = 0; ii < parallel_ref_levels; ii++)
+       pmesh->UniformRefinement();
 
    // Create a coefficient describing the magnetic permeability
-   Coefficient * muInvCoef = SetupInvPermeabilityCoefficient();
+   ConstantCoefficient muInvCoef(1.);
 
    // Create the Magnetostatic solver
-   TeslaSolver Tesla(pmesh, order, kbcs, vbcs, vbcv, *muInvCoef,
-                     (b_uniform_.Size() > 0 ) ? a_bc_uniform  : NULL,
+   TeslaSolver Tesla(*pmesh, order, kbcs, vbcs, vbcv, muInvCoef,
+           NULL, current_ring, NULL);
+                 /*    (b_uniform_.Size() > 0 ) ? a_bc_uniform  : NULL,
                      (cr_params_.Size() > 0 ) ? current_ring  : NULL,
-                     (bm_params_.Size() > 0 ) ? bar_magnet    :
-                     (ha_params_.Size() > 0 ) ? halbach_array : NULL);
+                     (bm_params_.Size() > 0 ) ? bar_magnet    : 
+                     (ha_params_.Size() > 0 ) ? halbach_array : NULL);*/
 
-   // Initialize GLVis visualization
-   if (visualization)
-   {
-      Tesla.InitializeGLVis();
-   }
 
-   // Initialize VisIt visualization
-   VisItDataCollection visit_dc("Tesla-AMR-Parallel", &pmesh);
+   // Display the current number of DoFs in each finite element space
+   Tesla.PrintSizes();
 
-   if ( visit )
-   {
-      Tesla.RegisterVisItFields(visit_dc);
-   }
-   if (Mpi::Root()) { cout << "Initialization done." << endl; }
+   // Assemble all forms
+   Tesla.Assemble();
 
-   // The main AMR loop. In each iteration we solve the problem on the current
-   // mesh, visualize the solution, estimate the error on all elements, refine
-   // the worst elements and update all objects to work with the new mesh. We
-   // refine until the maximum number of dofs in the Nedelec finite element
-   // space reaches 10 million.
-   const int max_dofs = 10000000;
-   for (int it = 1; it <= maxit; it++)
-   {
-      if (Mpi::Root())
-      {
-         cout << "\nAMR Iteration " << it << endl;
-      }
+   // Solve the system and compute any auxiliary fields
+   Tesla.Solve();
 
-      // Display the current number of DoFs in each finite element space
-      Tesla.PrintSizes();
-
-      // Assemble all forms
-      Tesla.Assemble();
-
-      // Solve the system and compute any auxiliary fields
-      Tesla.Solve();
-
-      // Determine the current size of the linear system
-      int prob_size = Tesla.GetProblemSize();
-
-      // Write fields to disk for VisIt
-      if ( visit )
-      {
-         Tesla.WriteVisItFields(it);
-      }
-
-      // Send the solution by socket to a GLVis server.
-      if (visualization)
-      {
-         Tesla.DisplayToGLVis();
-      }
-
-      if (Mpi::Root())
-      {
-         cout << "AMR iteration " << it << " complete." << endl;
-      }
-
-      // Check stopping criteria
-      if (prob_size > max_dofs)
-      {
-         if (Mpi::Root())
-         {
-            cout << "Reached maximum number of dofs, exiting..." << endl;
-         }
-         break;
-      }
-      if ( it == maxit )
-      {
-         break;
-      }
-
-      // Wait for user input. Ask every 10th iteration.
-      char c = 'c';
-      if (Mpi::Root() && (it % 10 == 0))
-      {
-         cout << "press (q)uit or (c)ontinue --> " << flush;
-         cin >> c;
-      }
-      MPI_Bcast(&c, 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-      if (c != 'c')
-      {
-         break;
-      }
-
-      // Estimate element errors using the Zienkiewicz-Zhu error estimator.
-      Vector errors(pmesh.GetNE());
-      Tesla.GetErrorEstimates(errors);
-
-      double local_max_err = errors.Max();
-      double global_max_err;
-      MPI_Allreduce(&local_max_err, &global_max_err, 1,
-                    MPI_DOUBLE, MPI_MAX, pmesh.GetComm());
-
-      // Refine the elements whose error is larger than a fraction of the
-      // maximum element error.
-      const double frac = 0.5;
-      double threshold = frac * global_max_err;
-      if (Mpi::Root()) { cout << "Refining ..." << endl; }
-      pmesh.RefineByError(errors, threshold);
-
-      // Update the magnetostatic solver to reflect the new state of the mesh.
-      Tesla.Update();
-
-      if (pmesh.Nonconforming() && Mpi::WorldSize() > 1)
-      {
-         if (Mpi::Root()) { cout << "Rebalancing ..." << endl; }
-         pmesh.Rebalance();
-
-         // Update again after rebalancing
-         Tesla.Update();
-      }
-   }
-
-   delete muInvCoef;
+   // Determine the current size of the linear system
+   int prob_size = Tesla.GetProblemSize();
 
    return 0;
 }
@@ -426,6 +283,23 @@ double magnetic_shell(const Vector &x)
 // points, inner and outer radii, and a constant current in Amperes.
 void current_ring(const Vector &x, Vector &j)
 {
+
+   // Current Density Function
+   // Axis Start, Axis End, Inner Ring Radius,
+   //                               Outer Ring Radius, and Total Current
+   //                               of current ring (annulus)
+   Vector cr_params_(5);
+   //      mpirun -np 4 tesla -cr '0 0 -0.2 0 0 0.2 0.2 0.4 1'
+   cr_params_(0) = 0.; 
+   cr_params_(1) = 0.; 
+   cr_params_(2) = 0.; 
+   cr_params_(3) = 2.; 
+   cr_params_(4) = 0.; 
+   cr_params_(5) = 0.; 
+   cr_params_(6) = 0.2; 
+   cr_params_(7) = 0.4; 
+   cr_params_(8) = 1.; 
+
    MFEM_ASSERT(x.Size() == 3, "current_ring source requires 3D space.");
 
    j.SetSize(x.Size());
