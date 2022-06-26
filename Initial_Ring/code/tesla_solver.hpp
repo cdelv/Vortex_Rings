@@ -67,6 +67,7 @@ public:
    void DisplayToGLVis();
 
    const ParGridFunction & GetVectorPotential() { return *a_; }
+   const ParGridFunction & GetVectorField() { return *b_; }
 
 private:
 

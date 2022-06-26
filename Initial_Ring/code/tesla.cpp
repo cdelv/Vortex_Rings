@@ -213,6 +213,18 @@ int main(int argc, char *argv[])
    // Solve the system and compute any auxiliary fields
    Tesla.Solve();
 
+   ParGridFunction psi(Tesla.GetVectorPotential());
+   ParGridFunction v(Tesla.GetVectorField());
+
+   ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", pmesh);
+   paraview_out.SetLevelsOfDetail(order);
+   paraview_out.SetDataFormat(VTKFormat::BINARY);
+   paraview_out.RegisterField("Psi", &psi);
+   paraview_out.RegisterField("V", &v);
+   paraview_out.SetCycle(0);
+   paraview_out.SetTime(0);
+   paraview_out.Save();
+
    // Determine the current size of the linear system
    int prob_size = Tesla.GetProblemSize();
 
