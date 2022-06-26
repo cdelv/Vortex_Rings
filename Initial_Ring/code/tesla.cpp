@@ -87,11 +87,11 @@ int main(int argc, char *argv[])
    ParMesh *pmesh = new ParMesh();
    {
    //Load Mesh (Pointer to Delete it After Parallel Mesh is Created)
-   int n = 6;
-   double Lx = 2.;   
-   double Ly = 1.;
-   double Lz = 1.;
-   Mesh mesh = Mesh::MakeCartesian3D(2*n, n, n, Element::QUADRILATERAL, Lx, Ly, Lz);
+   int n = 10;
+   double Lx = 5.;   
+   double Ly = 5.;
+   double Lz = 5.;
+   Mesh mesh = Mesh::MakeCartesian3D(n, n, n, Element::QUADRILATERAL, Lx, Ly, Lz);
    mesh.EnsureNodes();
    int dim = mesh.Dimension();
 
@@ -158,10 +158,10 @@ void current_ring(const Vector &x, Vector &j)
    //                               of current ring (annulus)
    Vector cr_params_(9);
    //      mpirun -np 4 tesla -cr '0 0 -0.2 0 0 0.2 0.2 0.4 1'
-   cr_params_[0] = 0.4; cr_params_[1] = 0.5; cr_params_[2] = 0.5; 
-   cr_params_[3] = 0.5; cr_params_[4] = 0.5; cr_params_[5] = 0.5; 
+   cr_params_[0] = 0; cr_params_[1] = 2.5; cr_params_[2] = 2.5; 
+   cr_params_[3] = 5; cr_params_[4] = 2.5; cr_params_[5] = 2.5; 
    
-   cr_params_[6] = 0.2; cr_params_[7] = 0.4; 
+   cr_params_[6] = 1; cr_params_[7] = 2; 
 
    cr_params_[8] = 1.; 
 
