@@ -14,32 +14,32 @@ const int points = 7;
 struct Config
 {
     //Numerical Method Parameters
-    int n = 5;
-    int serial_refinements = 0;
-    int parallel_refinements = 0;
+    int n = 6;
+    int serial_refinements = 1;
+    int parallel_refinements = 1;
     int order = 2;
 
     //Time Parameters
-    int vis_freq = 100;
+    int vis_freq = 1000;
     double dt = 0.0001;
-    double t_final = 1;
+    double t_final = 3;
 
     //Box Parameters
-    double Lx = 2.0;
-    double Ly = 1.0;
-    double Lz = 1.0;
+    double Lx = 4.0;
+    double Ly = 1.5;
+    double Lz = 1.5;
 
     //Ring Parameters
     double R = 0.3;          //Radius
     double a = 0.1;         //Thickness
-    double Rx = Lx*0.5;    //Position x
+    double Rx = Lx*0.3;    //Position x
     double Ry = Ly*0.5;   //Position y
     double Rz = Lz*0.5;  //Position z
     double W = 100.;    //Mean Vorticity
 
     //Integral Parameters
     double Int_eps = 1E-15; 
-    double Int_cutoff = 0.5;
+    double Int_cutoff = 1.0;
     int depth = 3;
 
     //Physical Parameters
