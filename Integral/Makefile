@@ -46,7 +46,7 @@ mesh: settings/struct_cube.geo
 	@echo -e 'Done!\n'
 
 clean:
-	@rm -r results/graph/
+	@rm -rf results/graph/ *.x
 
 oclean:
 	@rm -rf .objects/*.o
