@@ -12,14 +12,14 @@ struct Config
 {
     //Numerical Method Parameters
     int n = 5;
-    int serial_refinements = 1;
+    int serial_refinements = 0;
     int parallel_refinements = 1;
     int order = 2;
 
     //Time Parameters
-    int vis_freq = 50;
+    int vis_freq = 5;
     double dt = 0.0001;
-    double t_final = 0.002;
+    double t_final = 3;
 
     //Box Parameters
     double Lx = 2;
@@ -233,13 +233,13 @@ int main(int argc, char *argv[])
         //Print Data for Visualization
         if (step%Parameters.vis_freq==0)
         {   
+            vis_print++;
             CurlGridFunctionCoefficient u_curl(u);
             w.ProjectCoefficient(u_curl);
             //piston->Create_Chi_Coefficient(Chi);
             paraview_out.SetCycle(vis_print);
             paraview_out.SetTime(t);
             paraview_out.Save();
-            vis_print++;
         }
     }
 
@@ -347,8 +347,8 @@ double integral(const Vector &r, double t, int coord){
     double z1 = 0;
     double z2 = Parameters.Lz;
 
-    const int points = 15;
-    const int depth = 4;
+    const int points = 7;
+    const int depth = 3;
 
     Vector cross; cross.SetSize(3);
     Vector rr; rr.SetSize(3);
@@ -374,7 +374,7 @@ double integral(const Vector &r, double t, int coord){
 
         double norm2 = rr.Norml2();
 
-        if (norm2<1e-6)
+        if (norm2<1e-9)
             return 0.0;
         else
             return 1.0*cross(coord)/std::pow(norm2,1.5);
