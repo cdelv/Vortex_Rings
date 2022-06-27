@@ -25,9 +25,9 @@ struct Config
     double t_final = 1;
 
     //Box Parameters
-    double Lx = 4.0;
-    double Ly = 1.5;
-    double Lz = 1.5;
+    double Lx = 2.0;
+    double Ly = 1.0;
+    double Lz = 1.0;
 
     //Ring Parameters
     double R = 0.3;          //Radius
@@ -39,7 +39,7 @@ struct Config
 
     //Integral Parameters
     double Int_eps = 1E-15; 
-    double Int_cutoff = 1;
+    double Int_cutoff = 0.5;
     int depth = 3;
 
     //Physical Parameters
@@ -48,7 +48,7 @@ struct Config
 
     //Dimension Scale
     double CL = R;                                              //Critical Lenght
-    double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/4)-0.25)); //Critical Time
+    double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/a)-0.25)); //Critical Time
     void Adimentionalize();
 } Parameters;
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     NavierSolver *flowsolver = nullptr;
 
     //Adimentionalize
-    //Parameters.Adimentionalize();
+    Parameters.Adimentionalize();
 
     ParMesh *pmesh = new ParMesh();
     {
