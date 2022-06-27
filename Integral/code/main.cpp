@@ -12,7 +12,7 @@ struct Config
 {
     //Numerical Method Parameters
     int n = 10;
-    int serial_refinements = 1;
+    int serial_refinements = 0;
     int parallel_refinements = 1;
     int order = 2;
 
@@ -27,8 +27,8 @@ struct Config
     double Lz = 1;
 
     //Ring Parameters
-    double R = 0.2;    //Radius
-    double a = 0.05;   //Thickness
+    double R = 0.3;    //Radius
+    double a = 0.1;   //Thickness
     double Rx = 1.;    //Position x
     double Ry = 0.5;   //Position y
     double Rz = 0.5;   //Position z
@@ -41,7 +41,11 @@ struct Config
     double kinvis = 1.48E-5;
     double atm_pressure = 0.;
 
+    //Dimension Scale
+    double CL = 1.;
+    double CT = 1.;
     void Adimentionalize();
+
 } Parameters;
 
 //Assembly functions
@@ -61,7 +65,7 @@ int main(int argc, char *argv[])
     double t = 0.0;
     int vis_print = 0;
     bool last_step = false;
-    Parameters.Adimentionalize();
+    //Parameters.Adimentionalize();
     NavierSolver *flowsolver = nullptr;
 
     ParMesh *pmesh = new ParMesh();
@@ -157,7 +161,7 @@ int main(int argc, char *argv[])
 
         if(mpi.Root()){
             std::cout.flush();
-            std::cout << step << "\t" << t << "\t" << Parameters.dt << "\t" << vis_print << "\r";
+            std::cout << step << "\t" << Parameters.CT*t << "\t" << Parameters.dt << "\t" << vis_print << "\r";
         }
 
         //Print Data for Visualization
@@ -167,7 +171,7 @@ int main(int argc, char *argv[])
             CurlGridFunctionCoefficient u_curl(u);
             w.ProjectCoefficient(u_curl);
             paraview_out.SetCycle(vis_print);
-            paraview_out.SetTime(t);
+            paraview_out.SetTime(Parameters.CT*t);
             paraview_out.Save();
         }
     }
@@ -183,11 +187,8 @@ int main(int argc, char *argv[])
 
 void Config::Adimentionalize()
 {
-	//Critical Lenght
-    double CL = R;
-
-    //Critical Time
-    double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/4)-0.25));
+    CL = R;     //Critical Lenght
+    CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/4)-0.25)); //Critical Time
 
     dt /= CT;
     t_final /= CT;
@@ -228,7 +229,7 @@ void Initial_Vorticity(const Vector &x, double t, Vector &u)
  
     if (r <= Parameters.a){
         TangentVortex(theta, u);
-        u *= 1-r/Parameters.a;   
+        u *= (1-r/Parameters.a)*Parameters.W;   
     } else
         u = 0.;
 }
@@ -275,7 +276,7 @@ double integral(const Vector &r, double t, int coord){
 
         double norm2 = rr.Norml2();
 
-        if (norm2<Parameters.Int_eps)
+        if (norm2<1e-9)
             return 0.0;
         else
             return 1.0*cross(coord)/std::pow(norm2,1.5);
