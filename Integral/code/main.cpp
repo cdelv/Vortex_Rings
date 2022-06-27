@@ -25,9 +25,9 @@ struct Config
     double t_final = 1;
 
     //Box Parameters
-    double Lx = 2.0;
-    double Ly = 1.0;
-    double Lz = 1.0;
+    double Lx = 4.0;
+    double Ly = 1.5;
+    double Lz = 1.5;
 
     //Ring Parameters
     double R = 0.3;          //Radius
@@ -72,12 +72,12 @@ int main(int argc, char *argv[])
     NavierSolver *flowsolver = nullptr;
 
     //Adimentionalize
-    Parameters.Adimentionalize();
+    //Parameters.Adimentionalize();
 
     ParMesh *pmesh = new ParMesh();
     {
     //Load Mesh (In Different Scope to Delete it After Parallel Mesh is Created)
-    Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);;
+    Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);
     mesh.EnsureNodes();
     int dim = mesh.Dimension();
 
