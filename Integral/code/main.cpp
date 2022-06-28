@@ -35,7 +35,7 @@ struct Config
     double Rx = Lx*0.3;    //Position x
     double Ry = Ly*0.5;   //Position y
     double Rz = Lz*0.5;  //Position z
-    double W = 10.0;    //Mean Vorticity
+    double W = 100.0;    //Mean Vorticity
 
     //Integral Parameters
     double Int_eps = 1E-14; 
@@ -281,8 +281,7 @@ double Integral(const Vector &r, double t, int coord){
         cross(1)= W(2)*rr(0)-W(0)*rr(2);
         cross(2)= W(0)*rr(1)-W(1)*rr(0);
 
-        double norm = std::sqrt(rr(0)*rr(0)+rr(1)*rr(1)+rr(2)*rr(2));
-        return cross(coord)/std::pow(norm+Parameters.Int_eps,3);
+        return cross(coord)*(std::pow(rr.Norml2(),-3)+Parameters.Int_eps);
     };
 
     auto f1 = [&](double x, double y) { 
