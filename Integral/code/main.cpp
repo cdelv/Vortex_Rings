@@ -14,15 +14,15 @@ const int points = 7;
 struct Config
 {
     //Numerical Method Parameters
-    int n = 6;
-    int serial_refinements = 1;
-    int parallel_refinements = 1;
+    int n = 4;
+    int serial_refinements = 2;
+    int parallel_refinements = 0;
     int order = 2;
 
     //Time Parameters
     int vis_freq = 1000;
     double dt = 0.0001;
-    double t_final = 3;
+    double t_final = 9;
 
     //Box Parameters
     double Lx = 4.0;
@@ -35,11 +35,11 @@ struct Config
     double Rx = Lx*0.3;    //Position x
     double Ry = Ly*0.5;   //Position y
     double Rz = Lz*0.5;  //Position z
-    double W = 100.;    //Mean Vorticity
+    double W = 10.0;    //Mean Vorticity
 
     //Integral Parameters
-    double Int_eps = 1E-15; 
-    double Int_cutoff = 1.0;
+    double Int_eps = 1E-14; 
+    double Int_cutoff = 2.0;
     int depth = 3;
 
     //Physical Parameters
@@ -282,11 +282,7 @@ double Integral(const Vector &r, double t, int coord){
         cross(2)= W(0)*rr(1)-W(1)*rr(0);
 
         double norm = std::sqrt(rr(0)*rr(0)+rr(1)*rr(1)+rr(2)*rr(2));
-
-        if (norm<Parameters.Int_eps)
-            return 0.0;
-        else
-            return cross(coord)/std::pow(norm,3);
+        return cross(coord)/std::pow(norm+Parameters.Int_eps,3);
     };
 
     auto f1 = [&](double x, double y) { 
