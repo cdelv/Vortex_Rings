@@ -15,7 +15,7 @@ struct Config
 {
     //Numerical Method Parameters
     int n = 4;
-    int serial_refinements = 2;
+    int serial_refinements = 1;
     int parallel_refinements = 0;
     int order = 2;
 
@@ -281,7 +281,8 @@ double Integral(const Vector &r, double t, int coord){
         cross(1)= W(2)*rr(0)-W(0)*rr(2);
         cross(2)= W(0)*rr(1)-W(1)*rr(0);
 
-        return cross(coord)*(std::pow(rr.Norml2(),-3)+Parameters.Int_eps);
+        double norm = rr.Norml2();
+        return cross(coord)/std::pow(norm+Parameters.Int_eps,3);
     };
 
     auto f1 = [&](double x, double y) { 
