@@ -5,7 +5,7 @@ include ../local_config.mk
 SANITFLAGS= -fsanitize=address -fsanitize=leak -fsanitize=undefined
 VALGRINDFLAGS= --tool=memcheck --track-origins=yes --leak-check=full -s
 CXX = mpic++
-FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL) $(HYPRE_INC) $(SUNDIALS_INC) -g #$(SANITFLAGS)
+FLAGS = -std=c++11 -O3 $(MFEM_FLAGS) -I$(GENERAL) $(BOOST) $(HYPRE_INC) $(SUNDIALS_INC) #-g #$(SANITFLAGS)
 RUN = mpirun -np $(PROCCESORS) ./
 SOURCES = $(wildcard code/*.cpp)
 DEPENDENCIES = $(SOURCES:code/%.cpp=.objects/%.o)
@@ -46,7 +46,7 @@ mesh: settings/struct_cube.geo
 	@echo -e 'Done!\n'
 
 clean:
-	@rm -r results/graph/
+	@rm -rf results/graph/ *.x
 
 oclean:
 	@rm -rf .objects/*.o
