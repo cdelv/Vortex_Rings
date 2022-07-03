@@ -1,6 +1,6 @@
-#include "navier_solver.hpp"
 #include <fstream>
 #include <string>
+#include "../Navier/navier_solver.hpp"
 #include <boost/math/tools/minima.hpp>
 #include "boost/math/quadrature/gauss_kronrod.hpp"
 
@@ -9,21 +9,21 @@ using namespace navier;
 using namespace boost::math::quadrature;
 
 //Number of Integration Points
-const int points = 7;
+const int points = 30;
 
 //Configuration Functions
 struct Config
 {
     //Numerical Method Parameters
-    int n = 4;
+    int n = 6;
     int serial_refinements = 1;
-    int parallel_refinements = 0;
+    int parallel_refinements = 1;
     int order = 2;
 
     //Time Parameters
     int vis_freq = 1000;
     double dt = 0.0001;
-    double t_final = 1;
+    double t_final = 16;
 
     //Box Parameters
     double Lx = 4.0;
@@ -31,8 +31,8 @@ struct Config
     double Lz = 1.5;
 
     //Ring Parameters
-    double R = 0.3;          //Radius
-    double epsilon = 0.1;   //Perturbation
+    double R = 0.3;           //Radius
+    double epsilon = 0.1;    //Perturbation
     double a = 0.1;         //Thickness
     double Rx = Lx*0.3;    //Position x
     double Ry = Ly*0.5;   //Position y
@@ -41,11 +41,10 @@ struct Config
 
     //Integral Parameters
     double Int_eps = 1E-14; 
-    double Int_cutoff = 2.0;
     int depth = 3;
 
     //Physical Parameters
-    double kinvis = 1.48E-5;
+    double kinvis = 1.48E-4;
     double atm_pressure = 0.;
 
     //Dimension Scale
@@ -60,6 +59,7 @@ void Initial_Velocity(const Vector &r, double t, Vector &u);
 double Integral(const Vector &r, double t, int coord);
 void Vel_Boundary_Condition(const Vector &x, double t, Vector &u);
 double Press_Boundary_Condition(const Vector &x, double t);
+void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, VectorFunctionCoefficient w_bdr, bool print);
 
 //Main Function
 int main(int argc, char *argv[])
@@ -78,17 +78,17 @@ int main(int argc, char *argv[])
 
     ParMesh *pmesh = new ParMesh();
     {
-    //Load Mesh (In Different Scope to Delete it After Parallel Mesh is Created)
-    Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);
-    mesh.EnsureNodes();
-    int dim = mesh.Dimension();
+        //Load Mesh (In Different Scope to Delete it After Parallel Mesh is Created)
+        Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);
+        mesh.EnsureNodes();
+        int dim = mesh.Dimension();
 
-    //Refine Serial Mesh
-    for (int i = 0; i < Parameters.serial_refinements; ++i)
-        mesh.UniformRefinement();
+        //Refine Serial Mesh
+        for (int i = 0; i < Parameters.serial_refinements; ++i)
+            mesh.UniformRefinement();
 
-    //Make Parallel Mesh
-    pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
+        //Make Parallel Mesh
+        pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
     }
     
     //Refine Parallel Mesh
@@ -154,6 +154,8 @@ int main(int argc, char *argv[])
     paraview_out.SetTime(t);
     paraview_out.Save();
 
+    Compute_Curl_Error(pmesh, u, w, w_bdr,mpi.Root());
+
     if(mpi.Root())
         std::cout << "step" << "\t" << "t" << "\t" << "dt" << "\t" << "print" << "\n";
 
@@ -209,8 +211,6 @@ void Config::Adimentionalize()
     Rz /= CL;
     W  *= CT;
 
-    Int_cutoff /= CL; 
-
     kinvis *= CT*pow(CL, -2);     
     atm_pressure *= pow(CT/CL, 2);
 }
@@ -263,11 +263,6 @@ void Initial_Velocity(const Vector &r, double t, Vector &u)
 double Integral(const Vector &r, double t, int coord){
 
     Vector W; W.SetSize(3);
-    double theta = std::atan2(r(2)-Parameters.Rz, r(1)-Parameters.Ry);
-    LinealVortex(theta, W);   
-    double d = W.DistanceTo(r); 
-    if (d>Parameters.Int_cutoff)
-        return 0.0;
 
     double x1 = Parameters.Rx-1.5*Parameters.a;
     double x2 = Parameters.Rx+1.5*Parameters.a;
@@ -304,17 +299,20 @@ double Integral(const Vector &r, double t, int coord){
 
         auto g = [&](double z) { return f2(x,y,z); };
 
-        return gauss_kronrod<double, points>::integrate(g, z1, z2, Parameters.depth);
+        //return gauss_kronrod<double, points>::integrate(g, z1, z2, Parameters.depth);
+        return gauss<double, points>::integrate(g, z1, z2);
     };
 
     auto f = [&](double x) { 
 
         auto g = [&](double y) { return f1(x, y); };
 
-        return gauss_kronrod<double, points>::integrate(g, y1, y2, Parameters.depth);
+        //return gauss_kronrod<double, points>::integrate(g, y1, y2, Parameters.depth);
+        return gauss<double, points>::integrate(g, y1, y2);
     };
 
-    return 0.25*M_1_PI*gauss_kronrod<double, points>::integrate(f, x1, x2, Parameters.depth);
+    //return 0.25*M_1_PI*gauss_kronrod<double, points-4>::integrate(f, x1, x2, Parameters.depth);
+    return 0.25*M_1_PI*gauss<double, points-15>::integrate(f, x1, x2);
 }
 
 void Vel_Boundary_Condition(const Vector &x, double t, Vector &u)
@@ -331,4 +329,26 @@ void Vel_Boundary_Condition(const Vector &x, double t, Vector &u)
 double Press_Boundary_Condition(const Vector &x, double t)
 {
     return Parameters.atm_pressure;
+}
+
+void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, VectorFunctionCoefficient w_bdr, bool print)
+{
+    //Create Integration Rule
+    const IntegrationRule *irs[Geometry::NumGeom];
+    for (int i=0; i < Geometry::NumGeom; ++i)
+        irs[i] = &(IntRules.Get(i, 2*Parameters.order-1));
+
+    //Compute L2 Norm of Initial VorticityCoe
+    double norm = ComputeGlobalLpNorm(2,w_bdr,*pmesh,irs);
+
+    //Compute Velocity Curl
+    CurlGridFunctionCoefficient u_curl(u);
+
+    //Compute Error
+    double Error = w.ComputeL2Error(u_curl,irs)/norm;
+
+    if(print){
+        std::cout <<"Initial Velocity Curl L2 Relative Error = "<< Error << std::endl;
+        std::cout <<"L2 Vorticity Norm = "<< norm << std::endl;
+    }
 }
