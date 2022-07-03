@@ -1,5 +1,6 @@
 #include <fstream>
 #include <string>
+#include <sys/stat.h>
 #include "../Navier/navier_solver.hpp"
 #include "boost/math/quadrature/gauss_kronrod.hpp"
 
@@ -15,14 +16,14 @@ struct Config
 {
     //Numerical Method Parameters
     int n = 6;
-    int serial_refinements = 4;
+    int serial_refinements = 1;
     int parallel_refinements = 0;
     int order = 2;
 
     //Time Parameters
     int vis_freq = 2000;
     double dt = 0.0001;
-    double t_final = 16.5;
+    double t_final = dt;
 
     //Box Parameters
     double Lx = 4.0;
@@ -48,6 +49,9 @@ struct Config
     //Dimension Scale
     double CL = R;                                              //Critical Lenght
     double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/a)-0.25)); //Critical Time
+
+    bool restart = true;
+
     void Adimentionalize();
 } Parameters;
 
@@ -58,6 +62,10 @@ double Integral(const Vector &r, double t, int coord);
 void Vel_Boundary_Condition(const Vector &x, double t, Vector &u);
 double Press_Boundary_Condition(const Vector &x, double t);
 void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, VectorFunctionCoefficient w_bdr, bool print);
+
+void SaveState(ParMesh *pmesh,ParGridFunction *Velocity, int pid, int N);
+void InitState(ParGridFunction *u, ParMesh *pmesh, int pid, int N);
+ParMesh* InitMesh(int pid, int N);
 
 //Main Function
 int main(int argc, char *argv[])
@@ -73,25 +81,9 @@ int main(int argc, char *argv[])
 
     //Adimentionalize
     Parameters.Adimentionalize();
-
-    ParMesh *pmesh = new ParMesh();
-    {
-        //Load Mesh (In Different Scope to Delete it After Parallel Mesh is Created)
-        Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);
-        mesh.EnsureNodes();
-        int dim = mesh.Dimension();
-
-        //Refine Serial Mesh
-        for (int i = 0; i < Parameters.serial_refinements; ++i)
-            mesh.UniformRefinement();
-
-        //Make Parallel Mesh
-        pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
-    }
     
-    //Refine Parallel Mesh
-    for (int ii = 0; ii < Parameters.parallel_refinements; ii++)
-        pmesh->UniformRefinement();
+    //Create or Read Mesh
+    ParMesh *pmesh = InitMesh(Mpi::WorldRank(), Mpi::WorldSize());
 
     //Create H1 Element Collections
     H1_FECollection vfec = H1_FECollection(Parameters.order, pmesh->Dimension());
@@ -112,10 +104,16 @@ int main(int argc, char *argv[])
     VectorFunctionCoefficient w_bdr(pmesh->Dimension(), Initial_Vorticity);
     w.ProjectCoefficient(w_bdr);
 
-    //Define Velocity Initial Conditions
+    //Calculate or Read Velocity Initial Conditions
     ParGridFunction *u = flowsolver->GetCurrentVelocity();
-    VectorFunctionCoefficient u_init(pmesh->Dimension(), Initial_Velocity);
-    u->ProjectCoefficient(u_init);
+    InitState(u, pmesh, Mpi::WorldRank(), Mpi::WorldSize());
+
+    //Calculate Error of Initial Velocity
+    Compute_Curl_Error(pmesh, u, w, w_bdr,mpi.Root());
+
+    //Save calculated Initial Velocity
+    if(!Parameters.restart)
+        SaveState(pmesh, u, Mpi::WorldRank(), Mpi::WorldSize());
 
     //Define Pressure Initial Conditions
     ParGridFunction *p = flowsolver->GetCurrentPressure();
@@ -152,8 +150,6 @@ int main(int argc, char *argv[])
     paraview_out.SetTime(t);
     paraview_out.Save();
 
-    Compute_Curl_Error(pmesh, u, w, w_bdr,mpi.Root());
-
     if(mpi.Root())
         std::cout << "step" << "\t" << "t" << "\t" << "dt" << "\t" << "print" << "\n";
 
@@ -183,6 +179,7 @@ int main(int argc, char *argv[])
             paraview_out.Save();
         }
     }
+
     flowsolver->PrintTimingData();
 
     //Free Memory
@@ -335,5 +332,81 @@ void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, V
     if(print){
         std::cout <<"Initial Velocity Curl L2 Relative Error = "<< Error << std::endl;
         std::cout <<"L2 Vorticity Norm = "<< norm << std::endl;
+    }
+}
+
+//Print the final results
+void SaveState(ParMesh *pmesh, ParGridFunction *Velocity, int pid, int N){
+    //Save final state
+    std::ofstream out;
+    std::ostringstream oss;
+    oss << std::setw(5) << std::setfill('0') << pid;
+
+    std::string path = "results/"+std::to_string(N);
+    
+    int a = mkdir((path).c_str(),0777);
+
+    std::string n_mesh = path+"/pmesh_"+oss.str()+".msh";
+    std::string n_velocity = path+"/velocity";
+    
+    out.open(n_mesh.c_str(),std::ios::out);
+    out.precision(16);
+    pmesh->ParPrint(out);
+    out.close();
+
+    Velocity->Save(n_velocity.c_str());
+}
+
+void InitState(ParGridFunction *u, ParMesh *pmesh, int pid, int N){
+    if (!Parameters.restart){
+        VectorFunctionCoefficient u_init(pmesh->Dimension(), Initial_Velocity);
+        u->ProjectCoefficient(u_init);
+    }
+    else
+    {  
+        std::ifstream in;
+        std::ostringstream oss;
+        oss << pid;
+        std::string path = "results/"+std::to_string(N);
+        std::string n_velocity = path+"/velocity.00000"+std::to_string(pid);
+        in.open(n_velocity.c_str(),std::ios::in);
+        ParGridFunction *read = new ParGridFunction(pmesh, in);
+        GridFunctionCoefficient read_coe(read);
+        in.close();
+        u->ProjectCoefficient(read_coe);
+    }
+}
+
+ParMesh* InitMesh(int pid, int N){
+    //if there are not files yet
+    if(!Parameters.restart){
+        Mesh mesh = Mesh::MakeCartesian3D(2*Parameters.n, Parameters.n, Parameters.n, Element::QUADRILATERAL, Parameters.Lx, Parameters.Ly, Parameters.Lz);
+        mesh.EnsureNodes();
+        int dim = mesh.Dimension();
+
+        //Refine Serial Mesh
+        for (int i = 0; i < Parameters.serial_refinements; ++i)
+            mesh.UniformRefinement();
+
+        //Make Parallel Mesh
+        ParMesh *pmesh = new ParMesh(MPI_COMM_WORLD, mesh);
+        mesh.Clear();
+
+        //Refine mesh (parallel)
+        for (int ii = 0; ii < Parameters.parallel_refinements; ii++)
+            pmesh->UniformRefinement();
+
+        return pmesh;
+    } 
+    else 
+    {   
+        //Read the input mesh
+        std::ostringstream oss;
+        oss << std::setw(5) << std::setfill('0') << pid;
+        std::string path = "results/"+std::to_string(N);
+        std::string n_mesh = path+"/pmesh_"+oss.str()+".msh";
+        std::ifstream mesh_ifs(n_mesh.c_str());
+        ParMesh *pmesh = new ParMesh(MPI_COMM_WORLD, mesh_ifs);
+        return pmesh;
     }
 }
