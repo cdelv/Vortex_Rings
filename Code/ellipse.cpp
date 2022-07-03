@@ -1,4 +1,4 @@
-#include "../Navier/navier_solver.hpp"
+#include "navier_solver.hpp"
 #include <fstream>
 #include <string>
 #include <boost/math/tools/minima.hpp>
@@ -23,7 +23,7 @@ struct Config
     //Time Parameters
     int vis_freq = 1000;
     double dt = 0.0001;
-    double t_final = 9;
+    double t_final = 1;
 
     //Box Parameters
     double Lx = 4.0;

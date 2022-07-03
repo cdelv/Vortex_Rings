@@ -9,11 +9,11 @@ struct Navier_Parameters
 {
     //Parameters
     int serial_refinements = 1;
-    int parallel_refinements = 1;
+    int parallel_refinements = 0;
     int order = 2;
     int vis_freq = 50;
     double dt = 0.001;
-    double t_final = 20.00;
+    double t_final = 0.005;
 
     double R_ring = 0.2;
     double ring_center_y = 0.5;
@@ -80,7 +80,7 @@ void Acceleration_terms(const Vector &x, double t, Vector &a)
 int main(int argc, char *argv[])
 {   
     //init Parameters
-    std::string parameters_file = "settup/parameters.txt";
+    std::string parameters_file = "settings/parameters.txt";
     Parameters.init(parameters_file);
 
 
