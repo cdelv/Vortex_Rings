@@ -8,13 +8,13 @@ using namespace navier;
 using namespace boost::math::quadrature;
 
 //Number of Integration Points
-const int points = 30;
+const int points = 25;
 
 //Configuration Functions
 struct Config
 {
     //Numerical Method Parameters
-    int n = 4;
+    int n = 6;
     int serial_refinements = 1;
     int parallel_refinements = 0;
     int order = 2;
@@ -57,6 +57,7 @@ void Initial_Velocity(const Vector &r, double t, Vector &u);
 double Integral(const Vector &r, double t, int coord);
 void Vel_Boundary_Condition(const Vector &x, double t, Vector &u);
 double Press_Boundary_Condition(const Vector &x, double t);
+void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, VectorFunctionCoefficient w_bdr, bool print);
 
 //Main Function
 int main(int argc, char *argv[])
@@ -151,6 +152,8 @@ int main(int argc, char *argv[])
     paraview_out.SetTime(t);
     paraview_out.Save();
 
+    Compute_Curl_Error(pmesh, u, w, w_bdr,mpi.Root());
+
     if(mpi.Root())
         std::cout << "step" << "\t" << "t" << "\t" << "dt" << "\t" << "print" << "\n";
 
@@ -173,7 +176,8 @@ int main(int argc, char *argv[])
         if (step%Parameters.vis_freq==0 || last_step)
         {   
             vis_print++;
-            flowsolver->ComputeCurl3D(*u,w);
+            CurlGridFunctionCoefficient u_curl(u);
+            w.ProjectCoefficient(u_curl);
             paraview_out.SetCycle(vis_print);
             paraview_out.SetTime(Parameters.CT*t);
             paraview_out.Save();
@@ -310,4 +314,26 @@ void Vel_Boundary_Condition(const Vector &x, double t, Vector &u)
 double Press_Boundary_Condition(const Vector &x, double t)
 {
     return Parameters.atm_pressure;
+}
+
+void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, VectorFunctionCoefficient w_bdr, bool print)
+{
+    //Create Integration Rule
+    const IntegrationRule *irs[Geometry::NumGeom];
+    for (int i=0; i < Geometry::NumGeom; ++i)
+        irs[i] = &(IntRules.Get(i, 2*Parameters.order-1));
+
+    //Compute L2 Norm of Initial VorticityCoe
+    double norm = ComputeGlobalLpNorm(2,w_bdr,*pmesh,irs);
+
+    //Compute Velocity Curl
+    CurlGridFunctionCoefficient u_curl(u);
+
+    //Compute Error
+    double Error = w.ComputeL2Error(u_curl,irs)/norm;
+
+    if(print){
+        std::cout <<"Initial Velocity Curl L2 Relative Error = "<< Error << std::endl;
+        std::cout <<"L2 Vorticity Norm = "<< norm << std::endl;
+    }
 }
