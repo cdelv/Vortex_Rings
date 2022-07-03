@@ -8,21 +8,21 @@ using namespace navier;
 using namespace boost::math::quadrature;
 
 //Number of Integration Points
-const int points = 25;
+const int points = 30;
 
 //Configuration Functions
 struct Config
 {
     //Numerical Method Parameters
     int n = 6;
-    int serial_refinements = 1;
+    int serial_refinements = 4;
     int parallel_refinements = 0;
     int order = 2;
 
     //Time Parameters
-    int vis_freq = 1000;
+    int vis_freq = 2000;
     double dt = 0.0001;
-    double t_final = 9;
+    double t_final = 16.5;
 
     //Box Parameters
     double Lx = 4.0;
@@ -31,7 +31,7 @@ struct Config
 
     //Ring Parameters
     double R = 0.3;          //Radius
-    double a = 0.1;         //Thickness
+    double a = 0.05;         //Thickness
     double Rx = Lx*0.3;    //Position x
     double Ry = Ly*0.5;   //Position y
     double Rz = Lz*0.5;  //Position z
@@ -296,7 +296,7 @@ double Integral(const Vector &r, double t, int coord){
         return gauss<double, points>::integrate(g, y1, y2);
     };
 
-    //return 0.25*M_1_PI*gauss_kronrod<double, points>::integrate(f, x1, x2, Parameters.depth);
+    //return 0.25*M_1_PI*gauss_kronrod<double, points-4>::integrate(f, x1, x2, Parameters.depth);
     return 0.25*M_1_PI*gauss<double, points-15>::integrate(f, x1, x2);
 }
 
