@@ -11,7 +11,7 @@ SOURCES = $(wildcard Navier/*.cpp)
 DEPENDENCIES = $(SOURCES:Navier/%.cpp=.objects/%.o)
 MAIN = $(wildcard Code/*.cpp)
 
-.PHONY: all main mesh graph clean oclean border_pressure circle ellipse piston
+.PHONY: all main mesh graph clean oclean
 .PRECIOUS: %.x $(DEPENDENCIES)
 
 all: posibilities
