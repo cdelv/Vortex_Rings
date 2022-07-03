@@ -30,10 +30,6 @@ posibilities: $(MAIN)
 	@echo -e 'Running program ... \n'
 	@$(RUN)$< #$(VALGRINDFLAGS)
 
-# ellipse: ellipse.x
-# 	@echo -e 'Running program ... \n'
-# 	@$(RUN)$< #$(VALGRINDFLAGS)
-
 graph:
 ifeq ($(SHARE_DIR), NULL)
 	@echo 'No share directory.'

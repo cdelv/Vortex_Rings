@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     flowsolver.AddAccelTerm(Acceleration_terms,domain_attr);    
 
     //Paraview visualization
-    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", &pmesh);
+    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/border_pressure", &pmesh);
     paraview_out.SetLevelsOfDetail(Parameters.order);
     paraview_out.SetDataFormat(VTKFormat::BINARY);
     paraview_out.RegisterField("Velocity", u_gf);

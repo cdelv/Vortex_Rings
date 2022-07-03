@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     flowsolver->Setup(Parameters.dt);
 
     //Paraview Visualization
-    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/graph", pmesh);
+    ParaViewDataCollection paraview_out = ParaViewDataCollection("results/ellipse", pmesh);
     paraview_out.SetLevelsOfDetail(Parameters.order);
     paraview_out.SetDataFormat(VTKFormat::BINARY);
     paraview_out.RegisterField("Vorticity", &w);
