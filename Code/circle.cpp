@@ -13,17 +13,19 @@ const int points = 30;
 
 //Configuration Functions
 struct Config
-{
+{   
+    bool restart = false;
+
     //Numerical Method Parameters
-    int n = 6;
+    int n = 7;
     int serial_refinements = 1;
-    int parallel_refinements = 0;
+    int parallel_refinements = 1;
     int order = 2;
 
     //Time Parameters
     int vis_freq = 2000;
     double dt = 0.0001;
-    double t_final = dt;
+    double t_final = 16;
 
     //Box Parameters
     double Lx = 4.0;
@@ -50,8 +52,6 @@ struct Config
     double CL = R;                                              //Critical Lenght
     double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/a)-0.25)); //Critical Time
 
-    bool restart = true;
-
     void Adimentionalize();
 } Parameters;
 
@@ -65,6 +65,7 @@ void Compute_Curl_Error(ParMesh *pmesh, ParGridFunction *u, ParGridFunction w, V
 
 void SaveState(ParMesh *pmesh,ParGridFunction *Velocity, int pid, int N);
 void InitState(ParGridFunction *u, ParMesh *pmesh, int pid, int N);
+void Check_for_File(int N);
 ParMesh* InitMesh(int pid, int N);
 
 //Main Function
@@ -72,6 +73,8 @@ int main(int argc, char *argv[])
 {   
     //Init MPI
     MPI_Session mpi(argc, argv);
+
+    Check_for_File(Mpi::WorldSize());
 
     //Aux Variables
     double t = 0.0;
@@ -342,7 +345,7 @@ void SaveState(ParMesh *pmesh, ParGridFunction *Velocity, int pid, int N){
     std::ostringstream oss;
     oss << std::setw(5) << std::setfill('0') << pid;
 
-    std::string path = "results/"+std::to_string(N);
+    std::string path = "results/"+std::to_string(N)+"circle";
     
     int a = mkdir((path).c_str(),0777);
 
@@ -354,7 +357,7 @@ void SaveState(ParMesh *pmesh, ParGridFunction *Velocity, int pid, int N){
     pmesh->ParPrint(out);
     out.close();
 
-    Velocity->Save(n_velocity.c_str());
+    Velocity->Save(n_velocity.c_str(),32);
 }
 
 void InitState(ParGridFunction *u, ParMesh *pmesh, int pid, int N){
@@ -367,7 +370,7 @@ void InitState(ParGridFunction *u, ParMesh *pmesh, int pid, int N){
         std::ifstream in;
         std::ostringstream oss;
         oss << pid;
-        std::string path = "results/"+std::to_string(N);
+        std::string path = "results/"+std::to_string(N)+"circle";
         std::string n_velocity = path+"/velocity.00000"+std::to_string(pid);
         in.open(n_velocity.c_str(),std::ios::in);
         ParGridFunction *read = new ParGridFunction(pmesh, in);
@@ -403,10 +406,17 @@ ParMesh* InitMesh(int pid, int N){
         //Read the input mesh
         std::ostringstream oss;
         oss << std::setw(5) << std::setfill('0') << pid;
-        std::string path = "results/"+std::to_string(N);
+        std::string path = "results/"+std::to_string(N)+"circle";
         std::string n_mesh = path+"/pmesh_"+oss.str()+".msh";
         std::ifstream mesh_ifs(n_mesh.c_str());
         ParMesh *pmesh = new ParMesh(MPI_COMM_WORLD, mesh_ifs);
         return pmesh;
     }
+}
+void Check_for_File(int N){
+    std::string name = "results/"+std::to_string(N)+"circle";
+    struct stat buffer;   
+    auto aa = (stat (name.c_str(), &buffer) == 0);
+    if (aa==0)
+        Parameters.restart = false;
 }

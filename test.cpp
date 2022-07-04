@@ -20,5 +20,11 @@ int main(int argc, char const *argv[])
 {
     int a = mkdir("test",0777);
 
+    std::string name = "results/4circle";
+    struct stat buffer;   
+    auto aa = (stat (name.c_str(), &buffer) == 0);
+    std::cout << typeid(aa).name() << std::endl; 
+    std::cout << aa << std::endl; 
+
     return 0;
 }
