@@ -7,4 +7,4 @@ local_config.mk
 *.vtu
 *.pvtu
 basilisk.tar.gz
-basilik/*
+basilisk/*
