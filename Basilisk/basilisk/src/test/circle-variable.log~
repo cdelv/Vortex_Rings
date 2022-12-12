@@ -1,3 +1,0 @@
-circle-variable.c:58: error: non-local variable 'max' is modified by this foreach loop:
-circle-variable.c:58: error: use a loop-local variable, a reduction operation
-circle-variable.c:58: error: or a serial loop to get rid of this error

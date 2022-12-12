@@ -1,6 +1,0 @@
-.qccE8ZzuS/adaptbug.c:1:7: warning: line number out of range
-adaptbug-cpp.c: warning: line number out of range
-<built-in>: warning: line number out of range
-/usr/include/stdc-predef.h:1:7: warning: line number out of range
-adaptbug.c:9:13: error: conflicting types for ‘check_flags’; have ‘_Bool()’
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/balance.h:179:13: note: previous definition of ‘check_flags’ with type ‘void()’

@@ -1,7 +1,0 @@
-.qcc58zdQy/bore.c:1:7: warning: line number out of range
-bore-cpp.c: warning: line number out of range
-<built-in>: warning: line number out of range
-/usr/include/stdc-predef.h:1:7: warning: line number out of range
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-mpi.h: In function ‘is_local_prolongation’:
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-mpi.h:714:9: error: ‘dp’ undeclared (first use in this function); did you mean ‘p’?
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-mpi.h:714:9: note: each undeclared identifier is reported only once for each function it appears in

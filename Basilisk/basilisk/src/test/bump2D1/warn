@@ -1,6 +1,0 @@
-.qccvNPAJg/bump2D1.c:1:7: warning: line number out of range
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/test/.qccvNPAJg//:1:7: warning: line number out of range
-<built-in>: warning: line number out of range
-/usr/include/stdc-predef.h:1:7: warning: line number out of range
-bump2D1.c:47:49: warning: argument 3 of type ‘double[2]’ with mismatched bound [-Warray-parameter=]
-/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/conservation.h:35:58: note: previously declared as ‘double *’

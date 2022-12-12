@@ -1,2 +1,0 @@
-f72300f2cdf902c63c1d406353e6aa5a  artery1D.c
-a96fe7540b95b8cec5fa11e6ac5bfa99  artery1D.s
