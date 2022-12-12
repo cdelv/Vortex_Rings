@@ -1,0 +1,27 @@
+bore.c.tags:	\
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/bitree.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/green-naghdi.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/predictor-corrector.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/saint-venant.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/poisson.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/multilayer.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/predictor-corrector.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/riemann.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/elevation.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/gauges.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/utils.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/output.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/mempool.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/memindex/range.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/foreach_cell.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/neighbors.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-mpi.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/balance.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/cartesian-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/fpe.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/common.h \
+

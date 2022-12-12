@@ -1,0 +1,28 @@
+rotate.s:	\
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/advection.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/vof.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/geometry.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/myc2d.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/myc.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/run.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/timestep.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/tracer.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/bcg.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/utils.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/output.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/quadtree.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/mempool.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/memindex/range.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/foreach_cell.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/neighbors.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/tree-mpi.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/balance.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/cartesian-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/fpe.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/common.h \
+

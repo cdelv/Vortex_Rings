@@ -6,3 +6,5 @@ local_config.mk
 *.pvd
 *.vtu
 *.pvtu
+basilisk.tar.gz
+basilik/*

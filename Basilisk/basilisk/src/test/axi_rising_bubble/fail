@@ -1,0 +1,17 @@
+
+
+# case 1
+t ci co vbx vb vbo area dt
+0 4.17907 0.00812115 0 4.1872 25128.6 12.5695 8.89853e-05
+WARNING: convergence for c not reached after 100 iterations
+  res: 49.7149 sum: -4.90801e+06 nrelax: 100
+WARNING: convergence for u.x not reached after 100 iterations
+  res: 2.3267e+06 sum: 0 nrelax: 100
+WARNING: convergence for p not reached after 100 iterations
+  res: 1.26743e+37 sum: -0.000660164 nrelax: 100
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: [Thread debugging using libthread_db enabled]
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: [Detaching after fork from child process 128941]
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: [New Thread 0x7fffeddff640 (LWP 128945)]
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: [New Thread 0x7fffe7fff640 (LWP 128946)]
+/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h:244:error: Thread 1 "axi_rising_bubb" received signal SIGFPE, Arithmetic exception.

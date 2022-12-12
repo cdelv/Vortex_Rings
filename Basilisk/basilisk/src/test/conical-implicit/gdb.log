@@ -1,0 +1,5 @@
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[Detaching after fork from child process 130404]
+[New Thread 0x7ffff78ab640 (LWP 130408)]
+[New Thread 0x7ffff5fe5640 (LWP 130409)]

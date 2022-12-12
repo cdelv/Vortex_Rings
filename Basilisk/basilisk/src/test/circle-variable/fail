@@ -1,0 +1,5 @@
+qcc -autolink -g -Wall -pipe -D_FORTIFY_SOURCE=2 -O2 -D_MPI=1 -lm -lmpi -O2 -DMTRACE=3 -o circle-variable/circle-variable circle-variable.c  -lm
+circle-variable.c:58: error: non-local variable 'max' is modified by this foreach loop:
+circle-variable.c:58: error: use a loop-local variable, a reduction operation
+circle-variable.c:58: error: or a serial loop to get rid of this error
+make: *** [circle-variable.s] Error 1

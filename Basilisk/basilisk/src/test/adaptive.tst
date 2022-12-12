@@ -1,0 +1,2 @@
+a0426e49179d3709a5306fd4de2b725e  adaptive.c
+0729b53bda2fe8c6fd365bb1e083259d  adaptive.s

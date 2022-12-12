@@ -1,0 +1,1 @@
+c9e40a5f1db0b5d882caecb1c496c4f8  adaptbug.c

@@ -1,0 +1,32 @@
+neumann3D.s:	\
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid3D.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/embed.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/poisson.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/view.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/utils.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/input.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/vertexbuffer.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/draw.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/draw_get.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/parse.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/gl/font.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/draw_json.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/gl/og_font.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/geometry.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/myc2d.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/myc.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/utils.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/output.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/embed-tree.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/foreach_cell.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/neighbors.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/multigrid-mpi.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/cartesian-common.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/events.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/fpe.h \
+	/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/common.h \
+

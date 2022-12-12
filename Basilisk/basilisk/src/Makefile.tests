@@ -1,0 +1,88 @@
+# Automatically generated using 'make Makefile.tests'
+# DO NOT EDIT, edit 'Makefile' instead
+ALLTESTS = \
+	bview.c \
+	include.c \
+	postproc.c \
+	qcc.c \
+	qplot.c \
+
+plots: \
+	mtrace/plot.png \
+	profiling/plot.png \
+	speed/plot.png \
+	bview/plots.page \
+	include/plots.page \
+	postproc/plots.page \
+	qcc/plots.page \
+
+TESTS = \
+
+SPECIAL_TESTS = \
+
+ALLPAGES = \
+	advection.h.page \
+	all-mach.h.page \
+	axi.h.page \
+	axistream.h.page \
+	bcg.h.page \
+	bview.c.page \
+	compressible.h.page \
+	conservation.h.page \
+	contact.h.page \
+	curvature.h.page \
+	diffusion.h.page \
+	discharge.h.page \
+	display.h.page \
+	distance.h.page \
+	draw.h.page \
+	elevation.h.page \
+	embed.h.page \
+	embed-tree.h.page \
+	fene-p.h.page \
+	fractions.h.page \
+	gauges.h.page \
+	geometry.h.page \
+	green-naghdi.h.page \
+	heights.h.page \
+	hele-shaw.h.page \
+	henry.h.page \
+	hessenberg.h.page \
+	iforce.h.page \
+	include.c.page \
+	input.h.page \
+	khash.h.page \
+	lambda2.h.page \
+	log-conform.h.page \
+	maxruntime.h.page \
+	momentum.h.page \
+	multilayer.h.page \
+	myc.h.page \
+	okada.h.page \
+	output.h.page \
+	parse.h.page \
+	PointTriangle.h.page \
+	poisson.h.page \
+	postproc.c.page \
+	profiling.h.page \
+	qcc.c.page \
+	radial.h.page \
+	reduced.h.page \
+	runge-kutta.h.page \
+	run.h.page \
+	saint-venant.h.page \
+	saint-venant-implicit.h.page \
+	solve.h.page \
+	spherical.h.page \
+	tag.h.page \
+	tension.h.page \
+	tracer.h.page \
+	two-phase.h.page \
+	utils.h.page \
+	vertexbuffer.h.page \
+	view.h.page \
+	viscosity.h.page \
+	vof.h.page \
+	utils.h.page \
+	diffusion.h.page \
+
