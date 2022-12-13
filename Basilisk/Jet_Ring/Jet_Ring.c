@@ -2,17 +2,15 @@
 #include "navier-stokes/centered.h"
 #include "navier-stokes/perfs.h"
 #include "fractions.h"
-//#include "view.h"
+#include "view.h"
 #include "lambda2.h"
 #include "output_htg.h"
-
-#define VTK_FILE_VERSION 20
-
-#define RADIUS (sqrt(sq(y) + sq(z)))
 
 // qcc -source -D_MPI=1 -O2 two_rings.c
 // mpicc -Wall -O2 -std=c99 _two_rings.c -lm -lmpi -L$BASILISK/gl -I$BASILISK/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
 // mpirun -np 4 ./a.out
+
+#define RADIUS (sqrt(sq(y) + sq(z)))
 
 scalar f[];
 int maxlevel = 9;

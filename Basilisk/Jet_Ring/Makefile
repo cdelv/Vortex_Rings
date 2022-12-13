@@ -1,14 +1,14 @@
-include ../basilisk_config.mk
+include ../local_config.mk
 
 SHELL := /bin/bash
 PATH := $(PATH):$(BASILISK)
 BASILISK := $(BASILISK)
 
-
-CFLAGS += -O2
-RUN = mpirun -np $(PROCCESORS) ./
+RUN = mpirun -np $(PROCCESORS) ./a.out
 
 all:
-	qcc -source -D_MPI=1 -O2 -I$(BASILISK) -L$(BASILISK) two_rings.c 
+	qcc  -source -O2 -D_MPI=1 -I$(Paraview_Out) Jet_Ring.c
+	mpicc -Wall -O2 -std=c99 _Jet_Ring.c -lm -lmpi -L$(BASILISK)/gl -I$(BASILISK)/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
 
-
+direct:
+	qcc -O2 -std=c99 -D_MPI=1 -I$(Paraview_Out) Jet_Ring.c -lm -lmpi -L$(BASILISK)/gl -I$(BASILISK)/gl -lglutils -lfb_osmesa -lGLU -lOSMesa

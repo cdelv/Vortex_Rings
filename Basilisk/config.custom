@@ -30,7 +30,7 @@ PYTHONINCLUDE = /usr/include/python3
 # OPENGLIBS = -lfb_dumb
 # CFLAGS += -DDUMBGL
 
-OPENGLIBS = -L$BASILISK/gl -I$BASILISK/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
+OPENGLIBS = -L$BASILISK/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
 # OPENGLIBS = -lfb_glx -lGLU -lGLEW -lGL -lX11
 
 # Compiler and libraries to use with CADNA.

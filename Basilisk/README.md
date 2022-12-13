@@ -58,6 +58,7 @@ make
 
 ```
 cd $BASILISK
+make -k
 make
 ```
 
