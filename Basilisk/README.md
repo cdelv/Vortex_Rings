@@ -1,6 +1,19 @@
 # Basilisk
 
-## Instalation
+## Compile a Basilisk Program
+
+We have set up a makefile to help with the compilation process. First, copy the `basilisk_config.mk` template.
+```
+cp basilisk_config.mk local_config.mk
+```
+ `local_config.mk` is ignored from the repo syncronization. Then, set up the necesary fields on  `local_config.mk`.
+ 
+ After that, go to a directory and type
+ ```
+make
+```
+
+## Install Basilisk
 
 First, you need to clone the repository. You can do it here. In the .gitignore I have excluded the Basilisk source code directory. For more details, go to http://basilisk.dalembert.upmc.fr/src/INSTALL.  
 
@@ -61,6 +74,3 @@ cd $BASILISK
 make -k
 make
 ```
-
-## Compile a Basilisk Program
-
