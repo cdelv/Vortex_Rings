@@ -9,3 +9,4 @@ local_config.mk
 basilisk.tar.gz
 basilisk/*
 Basilisk/basilisk/
+*.htg
