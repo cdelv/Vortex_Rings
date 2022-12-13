@@ -1992,6 +1992,7 @@ pfree (listf.z,__func__,__FILE__,__LINE__);
 #line 1445 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/common.h"
 #line 13 "Jet_Ring-cpp.c"
 #line 1 "Jet_Ring.c"
+#line 10 "Jet_Ring.c"
 #line 1 "grid/octree.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/grid/octree.h"
 
@@ -8988,7 +8989,7 @@ void mpi_boundary_update (scalar * list) {
 void octree_methods() {
   tree_methods();
 }
-#line 2 "Jet_Ring.c"
+#line 11 "Jet_Ring.c"
 #line 1 "navier-stokes/centered.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h"
 #line 27 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h"
@@ -13857,7 +13858,7 @@ static int adapt_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int
 
   event ("properties");
 }{end_tracing("adapt","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h",446);return 0;}end_tracing("adapt","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h",446);}
-#line 3 "Jet_Ring.c"
+#line 12 "Jet_Ring.c"
 #line 1 "navier-stokes/perfs.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/perfs.h"
 
@@ -13889,7 +13890,7 @@ static int perf_plot_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp
     "$BASILISK/navier-stokes/perfs.plot "
     "& read dummy; kill $!", "w");
 }{end_tracing("perf_plot","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/perfs.h",29);return 0;}end_tracing("perf_plot","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/perfs.h",29);}
-#line 4 "Jet_Ring.c"
+#line 13 "Jet_Ring.c"
 #line 1 "fractions.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h"
 #line 12 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h"
@@ -16334,7 +16335,7 @@ foreach ()
 #line 559
 {end_tracing("interface_area","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h",559);return area;}
 end_tracing("interface_area","/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/fractions.h",560);}
-#line 5 "Jet_Ring.c"
+#line 14 "Jet_Ring.c"
 #line 1 "view.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/view.h"
 #line 67 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/view.h"
@@ -20246,7 +20247,7 @@ bool load (struct _load p) {
   }
   return true;
 }
-#line 6 "Jet_Ring.c"
+#line 15 "Jet_Ring.c"
 #line 1 "lambda2.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/lambda2.h"
 static void eigsrt (double d[3],
@@ -20442,7 +20443,8 @@ JJ[2][i++] = ((val(s,0,0,1) - val(s,0,0,-1))/(2.*Delta));
     val(l2,0,0,0) = lambda[1]/2.;
   }end_foreach();}
 }
-#line 7 "Jet_Ring.c"
+#line 16 "Jet_Ring.c"
+#line 31 "Jet_Ring.c"
 #line 1 "output_htg.h"
 #line 1 "/home/wind/Documents/Vortex_Rings/Basilisk/Paraview_Out/output_htg.h"
 #line 1 "output_pvd.h"
@@ -21146,37 +21148,52 @@ MPI_File_set_view(fp, offset, f_view,f_view, "native", MPI_INFO_NULL);
 
 
 }
-#line 8 "Jet_Ring.c"
+#line 32 "Jet_Ring.c"
 
 
 
+
+
+
+
+int maxlevel = 9;
+int np = 2e5;
+double ue = 0.008;
+
+
+
+
+
+
+double ti = 4.;
+double tend = 120. + 0.1;
+
+
+
+
+
+double Re = 1750.0;
 
 
 
 
 scalar  f={11};
-int maxlevel = 9;
-double ti = 4., ue = 0.008;
-double Re = 1750.;
-double tend = 120. + 0.1;
-int np = 2e5;
-
-
-
-
 
 
 static double _boundary6(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet( val(f,0,0,0) *(1.) * (t <= ti));}}static double _boundary6_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous();}}
-static double _boundary7(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.);}}static double _boundary7_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
-static double _boundary8(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.);}}static double _boundary8_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
-static double _boundary9(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.);}}static double _boundary9_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
-static double _boundary10(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.);}}static double _boundary10_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
-static double _boundary11(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.);}}static double _boundary11_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
-static double _boundary12(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.);}}static double _boundary12_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
-static double _boundary13(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.);}}static double _boundary13_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
+static double _boundary7(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.0);}}static double _boundary7_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
+static double _boundary8(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.0);}}static double _boundary8_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
+static double _boundary9(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann (0.0);}}static double _boundary9_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return neumann_homogeneous ();}}
+
+
+static double _boundary10(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.0);}}static double _boundary10_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
+static double _boundary11(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.0);}}static double _boundary11_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
+static double _boundary12(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.0);}}static double _boundary12_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
+static double _boundary13(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet (0.0);}}static double _boundary13_homogeneous(Point point,Point neighbor,scalar _s,void *data){int ig=0;NOT_UNUSED(ig);int jg=0;NOT_UNUSED(jg);int kg=0;NOT_UNUSED(kg);POINT_VARIABLES;{int ig=neighbor.i-point.i;if(ig==0)ig=_attribute[_s.i].d.x;NOT_UNUSED(ig);int jg=neighbor.j-point.j;if(jg==0)jg=_attribute[_s.i].d.y;NOT_UNUSED(jg);int kg=neighbor.k-point.k;if(kg==0)kg=_attribute[_s.i].d.z;NOT_UNUSED(kg);POINT_VARIABLES;return dirichlet_homogeneous ();}}
 
 int main() {_init_solver();
-  L0 = 32.;
+  init_grid (64);
+  size (32.0);
   X0 = Y0 = Z0 = -L0/2;
   const vector muc = new_const_vector("muc",8,(double[]){1./Re, 1./Re, 1./Re});
   mu = muc;
@@ -21186,56 +21203,46 @@ free_solver();}
 
 
 
-static int init_0_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t = 0);*ip=i;*tp=t;return ret;}      static int init_0(const int i,const double t,Event *_ev){tracing("init_0","Jet_Ring.c",47); {
-  do { int refined; do { boundary_internal ((scalar *)all, "Jet_Ring.c", 48); refined = 0; ((Tree *)grid)->refined.n = 0; {foreach_leaf() if ((sqrt(sq(y) + sq(z))) < 2.5 && fabs(x) > 9.*L0/20. && level < (maxlevel - 1)) { refine_cell (point, all, 0, &((Tree *)grid)->refined); refined++; continue; }end_foreach_leaf();} mpi_all_reduce (refined, MPI_INT, MPI_SUM); if (refined) { mpi_boundary_refine (all); mpi_boundary_update (all); } } while (refined); } while(0);
 
+
+static int init_0_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t = 0.0);*ip=i;*tp=t;return ret;}      static int init_0(const int i,const double t,Event *_ev){tracing("init_0","Jet_Ring.c",88); {
+  do { int refined; do { boundary_internal ((scalar *)all, "Jet_Ring.c", 89); refined = 0; ((Tree *)grid)->refined.n = 0; {foreach_leaf() if ((sqrt(sq(y) + sq(z))) < 2.5 && x < -9.0*L0/20. && level < (maxlevel - 1)) { refine_cell (point, all, 0, &((Tree *)grid)->refined); refined++; continue; }end_foreach_leaf();} mpi_all_reduce (refined, MPI_INT, MPI_SUM); if (refined) { mpi_boundary_refine (all); mpi_boundary_update (all); } } while (refined); } while(0);
+  do { int refined; do { boundary_internal ((scalar *)all, "Jet_Ring.c", 90); refined = 0; ((Tree *)grid)->refined.n = 0; {foreach_leaf() if ((sqrt(sq(y) + sq(z))) < 1.5 && x < -19.5*L0/40. && level < (maxlevel)) { refine_cell (point, all, 0, &((Tree *)grid)->refined); refined++; continue; }end_foreach_leaf();} mpi_all_reduce (refined, MPI_INT, MPI_SUM); if (refined) { mpi_boundary_refine (all); mpi_boundary_update (all); } } while (refined); } while(0);
   _attribute[f.i].refine = _attribute[f.i].prolongation = fraction_refine;
   do { scalar  phi=new_vertex_scalar("phi"); foreach_vertex_stencil() {_stencil_val_a(phi,0,0,0);      }end_foreach_vertex_stencil(); {foreach_vertex() val(phi,0,0,0) = 1. - (sqrt(sq(y) + sq(z)));end_foreach_vertex();} fractions ((struct Fractions){phi, f});delete((scalar*)((scalar[]){phi,{-1}})); } while(0);
-  boundary_internal ((scalar *)((scalar[]){f,{-1}}), "Jet_Ring.c", 52);
-}{end_tracing("init_0","Jet_Ring.c",53);return 0;}end_tracing("init_0","Jet_Ring.c",53);}
+  boundary_internal ((scalar *)((scalar[]){f,{-1}}), "Jet_Ring.c", 93);
+}{end_tracing("init_0","Jet_Ring.c",94);return 0;}end_tracing("init_0","Jet_Ring.c",94);}
 
 
 
-static int inject_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=( t <= ti);*ip=i;*tp=t;return ret;}static int inject_expr1(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(i++);*ip=i;*tp=t;return ret;}      static int inject(const int i,const double t,Event *_ev){tracing("inject","Jet_Ring.c",57); {
+
+static int inject_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=( t <= ti);*ip=i;*tp=t;return ret;}static int inject_expr1(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(i++);*ip=i;*tp=t;return ret;}      static int inject(const int i,const double t,Event *_ev){tracing("inject","Jet_Ring.c",99); {
   do { scalar  phi=new_vertex_scalar("phi"); foreach_vertex_stencil() {_stencil_val_a(phi,0,0,0);      }end_foreach_vertex_stencil(); {foreach_vertex() val(phi,0,0,0) = 1. - (sqrt(sq(y) + sq(z)));end_foreach_vertex();} fractions ((struct Fractions){phi, f});delete((scalar*)((scalar[]){phi,{-1}})); } while(0);
-  boundary_internal ((scalar *)((scalar[]){f,{-1}}), "Jet_Ring.c", 59);
-}{end_tracing("inject","Jet_Ring.c",60);return 0;}end_tracing("inject","Jet_Ring.c",60);}
+  boundary_internal ((scalar *)((scalar[]){f,{-1}}), "Jet_Ring.c", 101);
+}{end_tracing("inject","Jet_Ring.c",102);return 0;}end_tracing("inject","Jet_Ring.c",102);}
 
 
 
 
 
+static int adapt_0_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(i++);*ip=i;*tp=t;return ret;}      static int adapt_0(const int i,const double t,Event *_ev){tracing("adapt_0","Jet_Ring.c",108);{
+  astats s = adapt_wavelet ((struct Adapt){(scalar*)((vector[]){u,{{-1},{-1},{-1}}}), (double[]){1.6*ue, ue, ue}, maxlevel});
+  fprintf (ferr, "# Time step %d -> refined %d cells, coarsened %d cells\n", i, s.nf, s.nc);
+}{end_tracing("adapt_0","Jet_Ring.c",111);return 0;}end_tracing("adapt_0","Jet_Ring.c",111);}
 
-static int snapshots_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t += 0.1);*ip=i;*tp=t;return ret;}      static int snapshots(const int i,const double t,Event *_ev){tracing("snapshots","Jet_Ring.c",67); {
-  char str[99];
-  sprintf (str,"Re = %g", Re);
-  double val = -0.0001;
+
+
+
+static int snapshots_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t += 0.1);*ip=i;*tp=t;return ret;}      static int snapshots(const int i,const double t,Event *_ev){tracing("snapshots","Jet_Ring.c",116); {
   scalar  l2=new_scalar("l2");
   lambda2 (u, l2);
-  foreach_stencil()
-    {_stencil_val_a(l2,0,0,0); _stencil_val(l2,0,0,0); _stencil_val(l2,0,0,0);      }end_foreach_stencil();
-  {
-#line 73
-foreach()
-    val(l2,0,0,0) = val(l2,0,0,0) < val ? val(l2,0,0,0) : HUGE;end_foreach();}
-  stats l2s = statsf(l2);
-  foreach_stencil()
-    {_stencil_val_a(l2,0,0,0); _stencil_val(l2,0,0,0); _stencil_val(l2,0,0,0);      }end_foreach_stencil();
-  {
-#line 76
-foreach()
-    val(l2,0,0,0) = val(l2,0,0,0) < val ? val(l2,0,0,0) : 0;end_foreach();}
-  boundary_internal ((scalar *)((scalar[]){l2,{-1}}), "Jet_Ring.c", 78);
+
 
   char path[]="htg";
   char prefix[80];
   sprintf(prefix, "data_%03d_%06d", (int) t, i);
-  output_htg((scalar *)((scalar[]){l2,{-1}}),(vector *)((vector[]){uf,{{-1},{-1},{-1}}}), path, prefix, i, t);delete((scalar*)((scalar[]){l2,{-1}}));
-#line 96 "Jet_Ring.c"
-}{end_tracing("snapshots","Jet_Ring.c",96);return 0;}end_tracing("snapshots","Jet_Ring.c",96);}
-
-static int adapt_0_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(i++);*ip=i;*tp=t;return ret;}      static int adapt_0(const int i,const double t,Event *_ev){tracing("adapt_0","Jet_Ring.c",98);
-  adapt_wavelet ((struct Adapt){(scalar*)((vector[]){u,{{-1},{-1},{-1}}}), (double[]){ue, ue, ue}, maxlevel});{end_tracing("adapt_0","Jet_Ring.c",99);return 0;}end_tracing("adapt_0","Jet_Ring.c",99);}
+  output_htg((scalar *)((scalar[]){l2,{-1}}),(vector *)((vector[]){u,{{-1},{-1},{-1}}}), path, prefix, i, t);delete((scalar*)((scalar[]){l2,{-1}}));
+}{end_tracing("snapshots","Jet_Ring.c",125);return 0;}end_tracing("snapshots","Jet_Ring.c",125);}
 
 static int stop_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t = tend);*ip=i;*tp=t;return ret;}static int stop(const int i,const double t,Event *_ev){;return 0;}
 #line 2 "ast/init_solver.h"
@@ -21250,10 +21257,10 @@ static void _init_solver (void)
   event_register((Event){0,1,init,{init_expr0},((int *)0),((double *)0),"/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h",188,"init"});
   event_register((Event){0,1,perfs,{perfs_expr0},((int *)0),((double *)0),"/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/perfs.h",7,"perfs"});
   event_register((Event){0,1,perf_plot,{perf_plot_expr0},((int *)0),((double *)0),"/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/perfs.h",24,"perf_plot"});
-  event_register((Event){0,1,init_0,{init_0_expr0},((int *)0),((double *)0),"Jet_Ring.c",47,"init"});
-  event_register((Event){0,2,inject,{inject_expr0,inject_expr1},((int *)0),((double *)0),"Jet_Ring.c",57,"inject"});
-  event_register((Event){0,1,snapshots,{snapshots_expr0},((int *)0),((double *)0),"Jet_Ring.c",67,"snapshots"});
-  event_register((Event){0,1,stop,{stop_expr0},((int *)0),((double *)0),"Jet_Ring.c",101,"stop"});
+  event_register((Event){0,1,init_0,{init_0_expr0},((int *)0),((double *)0),"Jet_Ring.c",88,"init"});
+  event_register((Event){0,2,inject,{inject_expr0,inject_expr1},((int *)0),((double *)0),"Jet_Ring.c",99,"inject"});
+  event_register((Event){0,1,snapshots,{snapshots_expr0},((int *)0),((double *)0),"Jet_Ring.c",116,"snapshots"});
+  event_register((Event){0,1,stop,{stop_expr0},((int *)0),((double *)0),"Jet_Ring.c",127,"stop"});
 
 
     
@@ -21281,7 +21288,7 @@ static void _init_solver (void)
   event_register((Event){0,1,end_timestep,{end_timestep_expr0},((int *)0),((double *)0),"/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h",428,"end_timestep"});
   event_register((Event){0,1,adapt,{adapt_expr0},((int *)0),((double *)0),"/home/wind/Documents/Vortex_Rings/Basilisk/basilisk/src/navier-stokes/centered.h",438,"adapt"});
   init_scalar((scalar){11},"f");
-  event_register((Event){0,1,adapt_0,{adapt_0_expr0},((int *)0),((double *)0),"Jet_Ring.c",98,"adapt"});
+  event_register((Event){0,1,adapt_0,{adapt_0_expr0},((int *)0),((double *)0),"Jet_Ring.c",108,"adapt"});
 
 #line 13
 }  _attribute[p.i].dirty=1,_attribute[p.i].boundary[right]=_boundary0,_attribute[p.i].boundary_homogeneous[right]=_boundary0_homogeneous;
@@ -21293,9 +21300,9 @@ static void _init_solver (void)
   _attribute[u.x.i].dirty=1,_attribute[u.x.i].boundary[left]=_boundary6,_attribute[u.x.i].boundary_homogeneous[left]=_boundary6_homogeneous;
   _attribute[u.x.i].dirty=1,_attribute[u.x.i].boundary[right]=_boundary7,_attribute[u.x.i].boundary_homogeneous[right]=_boundary7_homogeneous;
   _attribute[u.x.i].dirty=1,_attribute[u.x.i].boundary[top]=_boundary8,_attribute[u.x.i].boundary_homogeneous[top]=_boundary8_homogeneous;
-  _attribute[p.i].dirty=1,_attribute[p.i].boundary[top]=_boundary9,_attribute[p.i].boundary_homogeneous[top]=_boundary9_homogeneous;
-  _attribute[pf.i].dirty=1,_attribute[pf.i].boundary[top]=_boundary10,_attribute[pf.i].boundary_homogeneous[top]=_boundary10_homogeneous;
-  _attribute[u.x.i].dirty=1,_attribute[u.x.i].boundary[bottom]=_boundary11,_attribute[u.x.i].boundary_homogeneous[bottom]=_boundary11_homogeneous;
+  _attribute[u.x.i].dirty=1,_attribute[u.x.i].boundary[bottom]=_boundary9,_attribute[u.x.i].boundary_homogeneous[bottom]=_boundary9_homogeneous;
+  _attribute[p.i].dirty=1,_attribute[p.i].boundary[top]=_boundary10,_attribute[p.i].boundary_homogeneous[top]=_boundary10_homogeneous;
+  _attribute[pf.i].dirty=1,_attribute[pf.i].boundary[top]=_boundary11,_attribute[pf.i].boundary_homogeneous[top]=_boundary11_homogeneous;
   _attribute[p.i].dirty=1,_attribute[p.i].boundary[bottom]=_boundary12,_attribute[p.i].boundary_homogeneous[bottom]=_boundary12_homogeneous;
   _attribute[pf.i].dirty=1,_attribute[pf.i].boundary[bottom]=_boundary13,_attribute[pf.i].boundary_homogeneous[bottom]=_boundary13_homogeneous;
 
