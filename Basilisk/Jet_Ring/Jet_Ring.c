@@ -14,7 +14,6 @@
 #include "view.h"
 #include "lambda2.h"
 
-#define RADIUS (sqrt(sq(y) + sq(z)))
 /*
   This include is for Paraview visualization. We took it from Sander Sandox.
   Thank you very much for your help Maximilian Sander. 
@@ -46,7 +45,7 @@ double ue = 0.008;
   - tend: Finallization time.
 */
 double ti = 4.;
-double tend = 120. + 0.1;
+double tend = 110. + 0.1;
 
 /*
   Fluid Parameters:
@@ -107,13 +106,13 @@ event inject(i++; t <= ti) {
 */
 event adapt (i++){
   astats s = adapt_wavelet ((scalar*){u}, (double[]){1.6*ue, ue, ue}, maxlevel);
-  fprintf (stderr, "# Time step %d -> refined %d cells, coarsened %d cells\n", i, s.nf, s.nc);
+  fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
 /*
   Paraview Output.
 */
-event snapshots (t += 0.1) {
+event snapshots (t += 0.5) {
   scalar l2[];
   lambda2 (u, l2); // vorticity.
 

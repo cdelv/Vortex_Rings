@@ -21166,7 +21166,7 @@ double ue = 0.008;
 
 
 double ti = 4.;
-double tend = 120. + 0.1;
+double tend = 110. + 0.1;
 
 
 
@@ -21227,13 +21227,13 @@ static int inject_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;in
 
 static int adapt_0_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(i++);*ip=i;*tp=t;return ret;}      static int adapt_0(const int i,const double t,Event *_ev){tracing("adapt_0","Jet_Ring.c",108);{
   astats s = adapt_wavelet ((struct Adapt){(scalar*)((vector[]){u,{{-1},{-1},{-1}}}), (double[]){1.6*ue, ue, ue}, maxlevel});
-  fprintf (ferr, "# Time step %d -> refined %d cells, coarsened %d cells\n", i, s.nf, s.nc);
+  fprintf (ferr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }{end_tracing("adapt_0","Jet_Ring.c",111);return 0;}end_tracing("adapt_0","Jet_Ring.c",111);}
 
 
 
 
-static int snapshots_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t += 0.1);*ip=i;*tp=t;return ret;}      static int snapshots(const int i,const double t,Event *_ev){tracing("snapshots","Jet_Ring.c",116); {
+static int snapshots_expr0(int *ip,double *tp,Event *_ev){int i=*ip;double t=*tp;int ret=(t += 0.5);*ip=i;*tp=t;return ret;}      static int snapshots(const int i,const double t,Event *_ev){tracing("snapshots","Jet_Ring.c",116); {
   scalar  l2=new_scalar("l2");
   lambda2 (u, l2);
 
