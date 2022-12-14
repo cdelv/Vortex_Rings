@@ -14,6 +14,8 @@
 #include "view.h"
 #include "lambda2.h"
 
+#define RADIUS (sqrt(sq(y) + sq(z)))
+
 /*
   This include is for Paraview visualization. We took it from Sander Sandox.
   Thank you very much for your help Maximilian Sander. 
