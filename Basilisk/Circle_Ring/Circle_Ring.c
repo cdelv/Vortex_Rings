@@ -15,23 +15,23 @@
 #include "utils.h"
 
 /*
-  This include is for Paraview visualization. We took it from Sander Sandox.
-  Thank you very much for your help Maximilian Sander. 
+  This include is for Paraview visualization. We took it from Sander Sandbox.
+  Thank you very much for your help, Maximilian Sander. 
   See http://basilisk.fr/sandbox/sander/output_htg.h.
 
   This exports htg (Hyper Tree Grid) data from the simulation to Paraview.
-  We use this because basilisk uses octrees for the AMR. 
+  We use this because Basilisk uses octrees for the AMR. 
   
   Known HTG Problems
-  - HyperTreeGridToDualGrid stops working when advancing time step (Paraview related).
+  - HyperTreeGridToDualGrid stops working when advancing the time step (Paraview related).
   - Contour Filter does not work on HTG with only one tree (like this exporter creates) (Paraview related).
-  - x-z Axis are swapped (3D), x-y Axis are swapped (2D).
+  - x-z Axis is swapped (3D), x-y Axis is swapped (2D).
 */
 #include "output_htg.h"
 
 /*
   Time Variables:
-  - tend: Finallization time.
+  - tend: Finalization time.
 */
 double tend = 20. + 0.1;
 
@@ -42,12 +42,12 @@ double tend = 20. + 0.1;
 double Re = 1750.0;
 
 /*
-  Vortex Ring Parameters
-  -Gamma:
-  -aa:
-  -RR:
-  -LL:
-  -ttol:
+  Vortex Ring Parameters:
+  -Gamma: Magnitude of the vortex ring.
+  -aa: Sigma of the gaussian (thickness of the ring).
+  -RR: Vortex radius.
+  -LL: Initial position in the z-direction.
+  -ttol: Tolerance for the Laplace solver. 
 */
 double Gamma = 1.0;
 double aa = 0.2;
@@ -57,9 +57,8 @@ double ttol = 1.0e-8;
 
 /*
   AMR variables:
-  - maxlevel: maximun refinementh depth in the tree. ADD CRITERIA FOR VELOCITY
-  - np: 
-  - ue: 
+  - maxlevel: maximum refinement depth in the tree.
+  - ue: threshold for the refinement.
 */
 int maxlevel = 8;
 int np = 2e5;
@@ -67,10 +66,10 @@ double ue = 0.008;
 
 /*
   For vorticity initial conditions.
-  - W:
-  - curl_w0_x:
-  - curl_w0_y:
-  - curl_w0_z:
+  - W: Scale factor of the initial vorticity curl. 
+  - curl_w0_x: X component of the initial vorticity curl. 
+  - curl_w0_y: Y component of the initial vorticity curl. 
+  - curl_w0_z: Z component of the initial vorticity curl. 
 */
 double W(double r, double z);
 double curl_w0_x(double x, double y, double z);
@@ -78,7 +77,7 @@ double curl_w0_y(double x, double y, double z);
 double curl_w0_z(double x, double y, double z);
 
 /*
-  Velocity boundary conditions
+  Velocity boundary conditions:
   The order of the boundaries in 3D is
   { right,  left,   top, bottom, front, back  }
   { X max, X min, Y max,  Y min, Z max, Z min }
@@ -102,6 +101,8 @@ p[left]   = dirichlet(0.0);
 
 /*
   Laplace Boundary Conditions
+  The Dirichlet condition is necessary for convergence.
+  It's the farthest boundary from the ring.
 */
 scalar vx0[], vy0[], vz0[];
 scalar bx[], by[], bz[]; // forcing terms
@@ -111,7 +112,7 @@ vy0[back] = dirichlet(0.0);
 vz0[back] = dirichlet(0.0);
 
 /*
-  Functions for ...
+  Function for computing the curl of a vector field. 
 */
 void curl(const vector v, vector curl);
 
@@ -125,10 +126,10 @@ int main() {
 }
 
 /*
-  Initial Condition:
+  Initial Condition: we initialize the velocity from a vorticity field.
 */
 event init(t = 0.0) {
-  // Initialize the forcing terms
+  // Initialize the forcing terms of the Poisson equation
   foreach(){
     bx[] = curl_w0_x(x,y,z);
     by[] = curl_w0_y(x,y,z);
@@ -167,19 +168,19 @@ event snapshots (t += 0.1) {
   scalar l2[];
   lambda2 (u, l2);
 
-  vector Omega[]; //vorticity
-  scalar omega[]; //vorticity magnitude
+  vector Omega[]; // vorticity
+  scalar Omega_mag[]; // vorticity magnitude
 
   curl(u, Omega);
 
   foreach()
-    omega[] = norm(Omega);
+    Omega_mag[] = norm(Omega);
 
   // Paraview output
   char path[]="htg"; // no slash at the end!!
   char prefix[80];
   sprintf(prefix, "data_%03d_%06d", (int) t, i);
-  output_htg((scalar *){l2,omega},(vector *){u,Omega}, path, prefix, i, t);
+  output_htg((scalar *){l2,Omega_mag},(vector *){u,Omega}, path, prefix, i, t);
 }
 
 event stop (t = tend);

@@ -3,6 +3,8 @@
 // mpicc -Wall -O2 -std=c99 _two_rings.c -lm -lmpi -L$BASILISK/gl -I$BASILISK/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
 // mpirun -np 4 ./a.out
 
+// Example modified from http://basilisk.fr/sandbox/Antoonvh/two_rings.c
+
 /*
   This ones are basilisk includes.
   see http://basilisk.fr/Front%20Page
@@ -17,47 +19,43 @@
 #define RADIUS (sqrt(sq(y) + sq(z)))
 
 /*
-  This include is for Paraview visualization. We took it from Sander Sandox.
-  Thank you very much for your help Maximilian Sander. 
+  This include is for Paraview visualization. We took it from Sander Sandbox.
+  Thank you very much for your help, Maximilian Sander. 
   See http://basilisk.fr/sandbox/sander/output_htg.h.
 
   This exports htg (Hyper Tree Grid) data from the simulation to Paraview.
-  We use this because basilisk uses octrees for the AMR. 
+  We use this because Basilisk uses octrees for the AMR. 
   
   Known HTG Problems
-  - HyperTreeGridToDualGrid stops working when advancing time step (Paraview related).
+  - HyperTreeGridToDualGrid stops working when advancing the time step (Paraview related).
   - Contour Filter does not work on HTG with only one tree (like this exporter creates) (Paraview related).
-  - x-z Axis are swapped (3D), x-y Axis are swapped (2D).
+  - x-z Axis is swapped (3D), x-y Axis is swapped (2D).
 */
 #include "output_htg.h"
 
 /*
   AMR variables:
-  - maxlevel: maximun refinementh depth in the tree.
-  - np: 
-  - ue: 
+  - maxlevel: maximum refinement depth in the tree.
+  - ue: threshold for the refinement.
 */
 int maxlevel = 9;
-int np = 2e5;
 double ue = 0.008;
 
 /*
   Time Variables:
   - ti: Injection time.
-  - tend: Finallization time.
+  - tend: Finalization time.
 */
 double ti = 4.;
 double tend = 110. + 0.1;
 
 /*
   Fluid Parameters:
-  - 
+  - Re: Reynolds number.
 */
 double Re = 1750.0;
 
-/*
-  What is this?
-*/
+
 scalar f[];
 
 // Velocity boundary conditions
@@ -83,7 +81,7 @@ int main() {
 
 /*
   Initial Condition:
-  - Everithing starts as 0.
+  - Everything starts as 0.
   - We refine the mesh near the inlets.  
 */
 event init(t = 0.0) {
@@ -95,7 +93,7 @@ event init(t = 0.0) {
 }
 
 /*
-  The inflow jet is active, we recompute the inlet shape.
+  When the inflow jet is active we recompute the inlet shape.
 */
 event inject(i++; t <= ti) {
   fraction (f, 1. - RADIUS);
@@ -116,7 +114,7 @@ event adapt (i++){
 */
 event snapshots (t += 0.5) {
   scalar l2[];
-  lambda2 (u, l2); // vorticity.
+  lambda2 (u, l2);
 
   // Paraview
   char path[]="htg"; // no slash at the end!!
