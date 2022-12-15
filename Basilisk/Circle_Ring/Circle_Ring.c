@@ -165,22 +165,30 @@ event adapt (i++){
   DUMP function with grid statistics and other things over time
 */
 event snapshots (t += 0.1) {
-  scalar l2[];
-  lambda2 (u, l2);
+  //scalar l2[];
+  //lambda2 (u, l2);
 
-  vector Omega[]; // vorticity
-  scalar Omega_mag[]; // vorticity magnitude
+  vector W_vec[]; // vorticity
+  scalar W_mag[], W_r[], W_r2[], W_z[], W_z2[];
 
-  curl(u, Omega);
+  curl(u, W_vec);
 
   foreach()
-    Omega_mag[] = norm(Omega);
+    W_mag[] = norm(W_vec);
+
+   foreach(){
+   	double r = hypot(x,y);
+   	W_r[] = W_mag[]*r;
+   	W_r2[] = W_mag[]*pow(r,2);
+   	W_z[] = W_mag[]*(z-LL);
+   	W_z2[] = W_mag[]*pow(z-LL,2);
+   }
 
   // Paraview output
   char path[]="htg"; // no slash at the end!!
   char prefix[80];
   sprintf(prefix, "data_%03d_%06d", (int) t, i);
-  output_htg((scalar *){l2,Omega_mag},(vector *){u,Omega}, path, prefix, i, t);
+  output_htg((scalar *){W_mag, W_r, W_r2, W_z, W_z2},(vector *){u, W_vec}, path, prefix, i, t);
 }
 
 event stop (t = tend);
