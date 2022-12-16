@@ -47,7 +47,7 @@ struct Config
     //Physical Parameters
     double kinvis = 1.48E-4;
     double atm_pressure = 0.;
-
+R/a
     //Dimension Scale
     double CL = R;                                              //Critical Lenght
     double CT = std::pow(2*R/a, 2)/(W*(std::log(8*R/a)-0.25)); //Critical Time

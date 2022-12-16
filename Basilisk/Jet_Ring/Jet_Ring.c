@@ -13,19 +13,19 @@
 #include "navier-stokes/centered.h"
 #include "navier-stokes/perfs.h"
 #include "fractions.h"
-#include "view.h"
 #include "lambda2.h"
+#include "utils.h"
 
 #define RADIUS (sqrt(sq(y) + sq(z)))
 
 /*
   This include is for Paraview visualization. We took it from Sander Sandbox.
-  Thank you very much for your help, Maximilian Sander. 
+  Thank you very much for your help, Maximilian Sander.
   See http://basilisk.fr/sandbox/sander/output_htg.h.
 
   This exports htg (Hyper Tree Grid) data from the simulation to Paraview.
-  We use this because Basilisk uses octrees for the AMR. 
-  
+  We use this because Basilisk uses octrees for the AMR.
+
   Known HTG Problems
   - HyperTreeGridToDualGrid stops working when advancing the time step (Paraview related).
   - Contour Filter does not work on HTG with only one tree (like this exporter creates) (Paraview related).
@@ -47,7 +47,7 @@ double ue = 0.008;
   - tend: Finalization time.
 */
 double ti = 4.;
-double tend = 110. + 0.1;
+double tend = 50. + 0.1;
 
 /*
   Fluid Parameters:
@@ -59,7 +59,7 @@ double Re = 1750.0;
 scalar f[];
 
 // Velocity boundary conditions
-u.n[left]   = dirichlet( f[]  *(1.) * (t <= ti));
+u.n[left]   = dirichlet( f[]  * (1.) * (t <= ti));
 u.n[right]  = neumann (0.0);
 u.n[top]    = neumann (0.0);
 u.n[bottom] = neumann (0.0);
@@ -70,11 +70,17 @@ pf[top]     = dirichlet (0.0);
 p[bottom]   = dirichlet (0.0);
 pf[bottom]  = dirichlet (0.0);
 
+/*
+  Function for computing the curl of a vector field.
+*/
+void curl(const vector v, vector curl);
+
+
 int main() {
   init_grid (64);
   size (32.0);
-  X0 = Y0 = Z0 = -L0/2;
-  const face vector muc[] = {1./Re, 1./Re, 1./Re};
+  X0 = Y0 = Z0 = -L0 / 2;
+  const face vector muc[] = {1. / Re, 1. / Re, 1. / Re};
   mu = muc;
   run();
 }
@@ -82,11 +88,11 @@ int main() {
 /*
   Initial Condition:
   - Everything starts as 0.
-  - We refine the mesh near the inlets.  
+  - We refine the mesh near the inlets.
 */
 event init(t = 0.0) {
-  refine (RADIUS < 2.5 && x < -9.0*L0/20.   && level < (maxlevel - 1));
-  refine (RADIUS < 1.5 && x < -19.5*L0/40. && level < (maxlevel));
+  refine (RADIUS < 2.5 && x < -9.0 * L0 / 20.   && level < (maxlevel - 1));
+  refine (RADIUS < 1.5 && x < -19.5 * L0 / 40. && level < (maxlevel));
   f.refine = f.prolongation = fraction_refine;
   fraction (f, 1. - RADIUS);
   boundary ({f});
@@ -102,10 +108,10 @@ event inject(i++; t <= ti) {
 
 /*
   Perform the AMR.
-  - We use the velocity as the criteria for refinement. 
+  - We use the velocity as the criteria for refinement.
 */
-event adapt (i++){
-  astats s = adapt_wavelet ((scalar*){u}, (double[]){1.6*ue, ue, ue}, maxlevel);
+event adapt (i++) {
+  astats s = adapt_wavelet ((scalar*) {u}, (double[]) {1.6 * ue, ue, ue}, maxlevel);
   fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
@@ -113,14 +119,40 @@ event adapt (i++){
   Paraview Output.
 */
 event snapshots (t += 0.5) {
-  scalar l2[];
+  scalar l2[], W_mag[];
+  vector W_vec[];
   lambda2 (u, l2);
+  curl(u, W_vec);
+
+  foreach ()
+    W_mag[] = norm(W_vec);
 
   // Paraview
-  char path[]="htg"; // no slash at the end!!
+  char path[] = "htg"; // no slash at the end!!
   char prefix[80];
   sprintf(prefix, "data_%03d_%06d", (int) t, i);
-  output_htg((scalar *){l2},(vector *){u}, path, prefix, i, t);
+  output_htg((scalar *) {l2, W_mag}, (vector *) {u,W_vec}, path, prefix, i, t);
 }
 
 event stop (t = tend);
+
+void curl(const vector v, vector curl) {
+  vector dvx[], dvy[], dvz[];
+  scalar vx[], vy[], vz[];
+
+  foreach () {
+    vx[] = v.x[];
+    vy[] = v.y[];
+    vz[] = v.z[];
+  }
+
+  gradients ({vx}, {dvx});
+  gradients ({vy}, {dvy});
+  gradients ({vz}, {dvz});
+
+  foreach () {
+    curl.x[] = dvz.y[] - dvy.z[];
+    curl.y[] = dvx.z[] - dvz.x[];
+    curl.z[] = dvy.x[] - dvx.y[];
+  }
+}

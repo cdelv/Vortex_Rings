@@ -9,6 +9,7 @@
 */
 #include "grid/octree.h"
 #include "poisson.h"
+#include "diffusion.h"
 #include "navier-stokes/centered.h"
 #include "navier-stokes/perfs.h"
 #include "lambda2.h"
@@ -33,11 +34,11 @@ struct Config {
   // Finalization time.
   double tmax;
 
-  // Box dimensions.
+  // Box size.
   double L;
 
-  // Ring Parameters, radius, Initial position in the z-direction,
-  //Sigma of the gaussian (thickness of the ring), Magnitude of the vortex, and
+  // Ring Parameters: radius, Initial position in the z-direction,
+  // Sigma of the gaussian (thickness of the ring), Magnitude of the vortex, and
   // Tolerance for the Laplace solver.
   // R=1 and Gamma=1 always.
   double R, Z0, a, Gamma, tol;
@@ -53,6 +54,7 @@ struct Config {
   char *path;
 } conf;
 
+// How often to save data.
 double save_dt = 0.1;
 
 // Initialize the values of the Config struct
@@ -64,11 +66,13 @@ void init_values(int argc, char *argv[]);
   - curl_w0_x: X component of the initial vorticity curl.
   - curl_w0_y: Y component of the initial vorticity curl.
   - curl_w0_z: Z component of the initial vorticity curl.
+  - curl: computes the curl of a vector field.
 */
 double W(double r, double z);
 double curl_w0_x(double x, double y, double z);
 double curl_w0_y(double x, double y, double z);
 double curl_w0_z(double x, double y, double z);
+void curl(const vector v, vector curl);
 
 /*
   Velocity boundary conditions:
@@ -105,11 +109,6 @@ vx0[back] = dirichlet(0.0);
 vy0[back] = dirichlet(0.0);
 vz0[back] = dirichlet(0.0);
 
-/*
-  Function for computing the curl of a vector field.
-*/
-void curl(const vector v, vector curl);
-
 int main(int argc, char *argv[]) {
   init_values(argc, argv);
   init_grid ((int)pow(2,conf.initial_level));
@@ -127,6 +126,8 @@ event init(t = 0.0) {
   // Restart simulation from previus run
   //if (!restore (file = "restart")){
   // Initialize the forcing terms of the Poisson equation
+  const face vector muc[] = {sq(0.4/(2*pi)), sq(0.4/(2*pi))};
+
   foreach () {
     bx[] = curl_w0_x(x, y, z);
     by[] = curl_w0_y(x, y, z);
@@ -135,8 +136,17 @@ event init(t = 0.0) {
 
   // Solve Poisson equation
   // \nabla( \alpha \nabla(a)) - \lamba a = b
+  // \nabla^2 v0 = curl(W0)
   poisson (vx0, bx, tolerance = conf.tol);
+  diffusion (vx0, 0.05);
+  poisson (vx0, bx, tolerance = conf.tol);
+
   poisson (vy0, by, tolerance = conf.tol);
+  diffusion (vy0, 0.05);
+  poisson (vy0, by, tolerance = conf.tol);
+
+  poisson (vz0, bz, tolerance = conf.tol);
+  diffusion (vz0, 0.05);
   poisson (vz0, bz, tolerance = conf.tol);
 
   // Initialize velocity
@@ -145,7 +155,6 @@ event init(t = 0.0) {
     u.y[] = vy0[];
     u.z[] = vz0[];
   }
-  //}
 }
 
 /*
