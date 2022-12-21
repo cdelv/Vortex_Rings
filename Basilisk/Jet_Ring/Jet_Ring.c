@@ -64,11 +64,8 @@ double save_dt = 0.5;
 // Initialize the values of the Config struct
 void init_values(int argc, char *argv[]);
 
-/*
-  Time Variables:
-  - ti: Injection time.
-  - tend: Finalization time.
-*/
+//  Function for computing the curl of a vector field.
+void curl(const vector v, vector curl);
 
 scalar f[];
 
@@ -83,11 +80,6 @@ p[top]      = dirichlet (0.0);
 pf[top]     = dirichlet (0.0);
 p[bottom]   = dirichlet (0.0);
 pf[bottom]  = dirichlet (0.0);
-
-/*
-  Function for computing the curl of a vector field.
-*/
-void curl(const vector v, vector curl);
 
 
 int main(int argc, char *argv[]) {
@@ -133,7 +125,7 @@ event adapt (i++){
 /*
   Paraview Output.
 */
-event snapshots (t += 0.5) {
+event snapshots (t += save_dt) {
   scalar l2[], W_mag[];
   vector W_vec[];
   lambda2 (u, l2);
