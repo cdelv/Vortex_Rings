@@ -30,28 +30,31 @@
 */
 #include "output_htg.h"
 
+// Macro for ring refinement
+#define RADIUS (sqrt(sq(x) + sq(y)))
+
 struct Config {
-  // Finalization time.
-  double tmax;
+    // Finalization time.
+    double tmax;
 
-  // Box size.
-  double L;
+    // Box size.
+    double L;
 
-  // Ring Parameters: radius, Initial position in the z-direction,
-  // Sigma of the gaussian (thickness of the ring), Magnitude of the vortex, and
-  // Tolerance for the Laplace solver.
-  // R=1 and Gamma=1 always.
-  double R, Z0, a, Gamma, tol;
+    // Ring Parameters: radius, Initial position in the z-direction,
+    // Sigma of the gaussian (thickness of the ring), Magnitude of the vortex, and
+    // Tolerance for the Laplace solver.
+    // R=1 and Gamma=1 always.
+    double R, Z0, a, Gamma, tol;
 
-  // Fluid parameters
-  double Re, viscosity;
+    // Fluid parameters
+    double Re, viscosity;
 
-  // AMR parameters
-  int max_level, initial_level;
-  double threshold;
+    // AMR parameters
+    int max_level, initial_level;
+    double threshold;
 
-  // File saving parameters
-  char *path;
+    // File saving parameters
+    char *path;
 } conf;
 
 // How often to save data.
@@ -62,8 +65,17 @@ void init_values(int argc, char *argv[]);
 
 /*
   - curl: computes the curl of a vector field.
+  - Integral: computes ....
 */
 void curl(const vector v, vector curl);
+void Integral(double x, double y, double z, double vals[3]);
+
+int k=0;
+
+int count(){
+    k+=1;
+    return k;
+}
 
 /*
   Velocity boundary conditions:
@@ -100,84 +112,45 @@ vx0[back] = dirichlet(0.0);
 vy0[back] = dirichlet(0.0);
 vz0[back] = dirichlet(0.0);
 
-void test(){
-  double Z0 = 0.0;
-  double a = 0.2;
-  double x = 1.0;
-  double y = 1.2;
-  double z = 0.9;
-
-  char command[200];
-  sprintf (command, "./integral %g %g %g %g %g", Z0, a, x, y, z);
-  fprintf (stderr, " %s \n", command);
-
-  FILE *cmd=popen(command, "r");
-
-  char buf[200]={0x0};
-  fgets(buf, sizeof(buf), cmd);
-  fprintf (stderr, " %s \n", buf);
-
-  char *token = strtok(buf, ",");
-  double vals[3];
-
-  for (int i = 0; i < 3; ++i)
-  {   
-      vals[i] = atof(token);
-      printf("%g\n", vals[i]);
-      token = strtok(NULL, ",");
-  }
-
-
-  pclose(cmd);
-}
-
 int main(int argc, char *argv[]) {
-  init_values(argc, argv);
-  init_grid ((int)pow(2,conf.initial_level));
-  size(conf.L);
-  X0 = Y0 = Z0 = -L0 / 2;
-  const face vector muc[] = {conf.viscosity, conf.viscosity, conf.viscosity};
-  mu = muc;
-  test();
-  //run();
+    init_values(argc, argv);
+    init_grid ((int)pow(2, conf.initial_level));
+    size(conf.L);
+    X0 = Y0 = Z0 = -L0 / 2;
+    const face vector muc[] = {conf.viscosity, conf.viscosity, conf.viscosity};
+    mu = muc;
+    run();
 }
 
 /*
   Initial Condition: we initialize the velocity from a vorticity field.
 */
 event init(t = 0.0) {
-  foreach () {
-    char command[200];
-    sprintf (command, "./integral %g %g %g %g %g", conf.Z0, conf.a, x, y, z);
 
-    FILE *cmd=popen(command, "r");
+    // Refine the ring
+    refine (RADIUS < conf.R + 1.5 * conf.a && abs(z - conf.Z0) < conf.a && level < conf.max_level - 1);
+    refine (RADIUS < conf.R + 4.5 * conf.a && abs(z - conf.Z0) < 3 * conf.a && level < conf.max_level - 2);
+    unrefine(RADIUS + sq(z) > conf.R + 4 * conf.a );
 
-    char buf[200]={0x0};
-    fgets(buf, sizeof(buf), cmd);
-    fprintf (stderr, " %s \n", buf);
-
-    char *token = strtok(buf, ",");
     double vals[3];
-    for (int i = 0; i < 3; ++i){   
-        vals[i] = atof(token);
-        token = strtok(NULL, ",");
+
+    foreach () {
+        Integral(x, y, z, vals);
+        u.x[] = vals[0];
+        u.y[] = vals[1];
+        u.z[] = vals[2];
+        printf("%g %g %g %d \n", vals[0], vals[1], vals[2], count());
     }
-
-    pclose(cmd);
-
-    u.x[] = 0; //vals[0];
-    u.y[] = 0; //vals[1];
-    u.z[] = 0; //vals[2];
-  }
 }
+
 
 /*
   Perform the AMR.
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-  astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level);
-  fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
+    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level);
+    fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
 /*
@@ -193,81 +166,109 @@ event adapt (i++) {
   CHECK FOR FILE EXISTANCE
 */
 event snapshots (t += save_dt) {
-  vector W_vec[], W_r[], W_r2[], W_Z[], W_Z2[];
-  scalar W_mag[], PID[], LEVEL[];
+    vector W_vec[], W_r[], W_r2[], W_Z[], W_Z2[];
+    scalar W_mag[], PID[], LEVEL[];
 
-  curl(u, W_vec);
+    curl(u, W_vec);
 
-  foreach () {
-    double r = hypot(x, y);
-    W_mag[] = norm(W_vec);
-    PID[] = pid();
-    LEVEL[] = level;
-    foreach_dimension() {
-      W_r.x[] = r * W_vec.x[];
-      W_r2.x[] = pow(r , 2) * W_vec.x[];
-      W_Z.x[] = (z - conf.Z0) * W_vec.x[];
-      W_Z2.x[] = pow(z - conf.Z0, 2) * W_vec.x[];
+    foreach () {
+        double r = hypot(x, y);
+        W_mag[] = norm(W_vec);
+        PID[] = pid();
+        LEVEL[] = level;
+        foreach_dimension() {
+            W_r.x[] = r * W_vec.x[];
+            W_r2.x[] = pow(r , 2) * W_vec.x[];
+            W_Z.x[] = (z - conf.Z0) * W_vec.x[];
+            W_Z2.x[] = pow(z - conf.Z0, 2) * W_vec.x[];
+        }
     }
-  }
 
-  // Paraview output
-  char path[] = "htg"; // no slash at the end!!
-  char prefix[80];
-  sprintf(prefix, "data_%03d_%06d", (int) t, i);
-  output_htg((scalar *) {W_mag, PID, LEVEL}, (vector *) {uf, W_vec, W_r, W_r2, W_Z, W_Z2}, conf.path, prefix, i, t);
+    // Paraview output
+    char prefix[80];
+    sprintf(prefix, "data_%03d_%06d", (int) t, i);
+    output_htg((scalar *) {W_mag, PID, LEVEL}, (vector *) {uf, W_vec, W_r, W_r2, W_Z, W_Z2}, conf.path, prefix, i, t);
 }
 
 event stop (t = conf.tmax);
 
 void init_values(int argc, char *argv[]) {
-  char *ptr;
-  conf.tmax = strtod(argv[1], &ptr);
-  conf.L = strtod(argv[2], &ptr);
-  conf.R = 1.0;
-  conf.Z0 = strtod(argv[3], &ptr);
-  conf.a = strtod(argv[4], &ptr);
-  conf.Gamma = 1.0;
-  conf.tol = strtod(argv[5], &ptr);
-  conf.Re = strtod(argv[6], &ptr);
-  conf.viscosity = 1.0 / conf.Re;
-  conf.initial_level = strtod(argv[7], &ptr);
-  conf.max_level = strtod(argv[8], &ptr);
-  conf.threshold = strtod(argv[9], &ptr);
-  save_dt = strtod(argv[10], &ptr);
-  conf.path = argv[11];
-  if (pid() == 0) {
-    printf("tmax = %g \n", conf.tmax);
-    printf("L = %g \n", conf.L);
-    printf("Z0 = %g \n", conf.Z0);
-    printf("a = %g \n", conf.a);
-    printf("tol = %g \n", conf.tol);
-    printf("Re = %g \n", conf.Re);
-    printf("initial_level = %d \n", conf.initial_level);
-    printf("max_level = %d \n", conf.max_level);
-    printf("threshold = %g \n", conf.threshold);
-    printf("save_dt = %g \n", save_dt);
-    printf("path = %s \n", conf.path);
-  }
+    char *ptr;
+    conf.tmax = strtod(argv[1], &ptr);
+    conf.L = strtod(argv[2], &ptr);
+    conf.R = 1.0;
+    conf.Z0 = strtod(argv[3], &ptr);
+    conf.a = strtod(argv[4], &ptr);
+    conf.Gamma = 1.0;
+    conf.tol = strtod(argv[5], &ptr);
+    conf.Re = strtod(argv[6], &ptr);
+    conf.viscosity = 1.0 / conf.Re;
+    conf.initial_level = strtod(argv[7], &ptr);
+    conf.max_level = strtod(argv[8], &ptr);
+    conf.threshold = strtod(argv[9], &ptr);
+    save_dt = strtod(argv[10], &ptr);
+    conf.path = argv[11];
+    if (pid() == 0) {
+        printf("tmax = %g \n", conf.tmax);
+        printf("L = %g \n", conf.L);
+        printf("Z0 = %g \n", conf.Z0);
+        printf("a = %g \n", conf.a);
+        printf("tol = %g \n", conf.tol);
+        printf("Re = %g \n", conf.Re);
+        printf("initial_level = %d \n", conf.initial_level);
+        printf("max_level = %d \n", conf.max_level);
+        printf("threshold = %g \n", conf.threshold);
+        printf("save_dt = %g \n", save_dt);
+        printf("path = %s \n", conf.path);
+    }
+}
+
+void Integral(double x, double y, double z, double vals[3]) {
+    vals[0] = 0.0;
+    vals[1] = 0.0;
+    vals[2] = 0.0;
+
+    // Create the command to be executed
+    char command[256];
+    sprintf (command, "./integral %g %g %g %g %g", conf.Z0, conf.a, x, y, z);
+
+    // Execute the command
+    FILE *cmd = popen(command, "r");
+
+    // Get the command output
+    char buf[256] = {0x0};
+    while (fgets(buf, sizeof(buf), cmd) != NULL) {
+        // Output is separated with ,
+        // separate the string
+        char *token = strtok(buf, ",");
+        for (int i = 0; i < 3; ++i) {
+            // store integral value
+            vals[i] = atof(token);
+            token = strtok(NULL, ",");
+        }
+    }
+
+    // Close file
+    pclose(cmd);
 }
 
 void curl(const vector v, vector curl) {
-  vector dvx[], dvy[], dvz[];
-  scalar vx[], vy[], vz[];
+    vector dvx[], dvy[], dvz[];
+    scalar vx[], vy[], vz[];
 
-  foreach () {
-    vx[] = v.x[];
-    vy[] = v.y[];
-    vz[] = v.z[];
-  }
+    foreach () {
+        vx[] = v.x[];
+        vy[] = v.y[];
+        vz[] = v.z[];
+    }
 
-  gradients ({vx}, {dvx});
-  gradients ({vy}, {dvy});
-  gradients ({vz}, {dvz});
+    gradients ({vx}, {dvx});
+    gradients ({vy}, {dvy});
+    gradients ({vz}, {dvz});
 
-  foreach () {
-    curl.x[] = dvz.y[] - dvy.z[];
-    curl.y[] = dvx.z[] - dvz.x[];
-    curl.z[] = dvy.x[] - dvx.y[];
-  }
+    foreach () {
+        curl.x[] = dvz.y[] - dvy.z[];
+        curl.y[] = dvx.z[] - dvz.x[];
+        curl.z[] = dvy.x[] - dvx.y[];
+    }
 }

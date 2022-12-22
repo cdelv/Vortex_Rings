@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
     double x = atof(argv[3]);
     double y = atof(argv[4]);
     double z = atof(argv[5]);
+    
     // W the vorticity and u the velocity
     // W = ∇ x u
     // ∇⋅u = 0

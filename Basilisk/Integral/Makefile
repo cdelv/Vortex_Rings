@@ -8,7 +8,7 @@ BASILISK := $(BASILISK)
 RUN = mpirun -np $(PROCCESORS) ./a.out
 
 run:
-	mpirun -np 4 ./a.out $(tmax) $(L) $(Z0) $(a) $(tol) $(Re) $(initial_level) $(max_level) $(threshold) $(save_dt) $(path)
+	mpirun -np 1 ./a.out $(tmax) $(L) $(Z0) $(a) $(tol) $(Re) $(initial_level) $(max_level) $(threshold) $(save_dt) $(path)
 
 source:
 	qcc  -source -O2 -D_MPI=1 -I$(Paraview_Out) Circle_Ring.c
