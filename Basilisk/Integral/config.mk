@@ -1,6 +1,6 @@
 
 # Simulation Time
-tmax = 20.0
+tmax = 37.0
 
 # Simulation Domain
 L = 16.0
@@ -14,11 +14,11 @@ tol = 1.0e-8
 Re = 1750
 
 # AMR parameters
-initial_level = 4
+initial_level = 6
 max_level = 8
-threshold = 0.008
+threshold = 0.0005
 
 # Save parameters
-save_dt = 0.1
+save_dt = 0.5
 path = htg
 

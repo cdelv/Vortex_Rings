@@ -30,6 +30,11 @@
 */
 #include "output_htg.h"
 
+/*
+  -
+*/
+#include "Integrals/connector.h"
+
 // Macro for ring refinement
 #define RADIUS (sqrt(sq(x) + sq(y) + sq(z)))
 
@@ -68,7 +73,6 @@ void init_values(int argc, char *argv[]);
   - Integral: computes ....
 */
 void curl(const vector v, vector curl);
-void Integral(double x, double y, double z, double vals[3]);
 
 /*
   Velocity boundary conditions:
@@ -114,24 +118,15 @@ event init(t = 0.0) {
     unrefine(RADIUS > conf.R + 10.0 * conf.a && level > 3);
     boundary (all);
 
-    double vals[3];
-
     if (pid() == 0)
         printf("\n %s ", "Computing Integral ... ");
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    foreach () {
+        u.x[] = U_x0(x,y,z,conf.Z0,conf.a);
+        u.y[] = U_y0(x,y,z,conf.Z0,conf.a);
+        u.z[] = U_z0(x,y,z,conf.Z0,conf.a);
+        printf("%6f %6f %6f %g %g %g %d \n", x, y, z, u.x[], u.y[], u.z[], pid());
 
-    for (int kk = 1; kk < npe(); ++kk){
-        MPI_Barrier (MPI_COMM_WORLD);
-        if (pid() == kk) {
-            foreach_cell () {
-                Integral(x, y, z, vals);
-                u.x[] = vals[0];
-                u.y[] = vals[1];
-                u.z[] = vals[2];
-                printf("%g %g %g %g %g %g %d \n", x, y, z, vals[0], vals[1], vals[2], pid());
-            }
-        }
     }
 
     if (pid() == 0)
@@ -226,6 +221,7 @@ void Integral(double x, double y, double z, double vals[3]) {
     // Create the command to be executed
     char command[256];
     sprintf (command, "./integral %g %g %g %g %g", conf.Z0, conf.a, x, y, z);
+    printf("%s\n", command);
 
     // Execute the command
     FILE *cmd = popen(command, "r");
