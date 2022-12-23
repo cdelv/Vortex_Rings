@@ -1,6 +1,6 @@
 // Compile with
-// qcc -source -D_MPI=1 -O2 two_rings.c
-// mpicc -Wall -O2 -std=c99 _two_rings.c -lm -lmpi -L$BASILISK/gl -I$BASILISK/gl -lglutils -lfb_osmesa -lGLU -lOSMesa
+// qcc -O2 -std=c99 -D_MPI=1 -I$(Paraview_Out) Circle_Ring.c -lm -lmpi -L$(pwd)/Integrals -lconnector -lstdc++ -Wl,-rpath,$(pwd)/Integrals
+// export LD_LIBRARY_PATH=$(pwd)/Integrals
 // mpirun -np 4 ./a.out
 
 /*
@@ -8,11 +8,8 @@
   see http://basilisk.fr/Front%20Page
 */
 #include "grid/octree.h"
-#include "poisson.h"
-#include "diffusion.h"
 #include "navier-stokes/centered.h"
 #include "navier-stokes/perfs.h"
-#include "lambda2.h"
 #include "utils.h"
 
 /*
@@ -55,7 +52,7 @@ struct Config {
     double Re, viscosity;
 
     // AMR parameters
-    int max_level, initial_level;
+    int max_level, initial_level, min_level;
     double threshold;
 
     // File saving parameters
@@ -65,13 +62,11 @@ struct Config {
 // How often to save data.
 double save_dt = 0.1;
 
-// Initialize the values of the Config struct
-void init_values(int argc, char *argv[]);
-
 /*
+  - init_values: initialize the values of the Config struct and edits save_dt
   - curl: computes the curl of a vector field.
-  - Integral: computes ....
 */
+void init_values(int argc, char *argv[]);
 void curl(const vector v, vector curl);
 
 /*
@@ -111,22 +106,23 @@ int main(int argc, char *argv[]) {
   Initial Condition: we initialize the velocity from a vorticity field.
 */
 event init(t = 0.0) {
-    // Refine the ring
-    refine (RADIUS < conf.R + 1.1 * conf.a && level < conf.max_level - 1);
-    refine (RADIUS < conf.R + 4.5 * conf.a && level < conf.max_level - 2);
-    unrefine(RADIUS > conf.R + 5.0 * conf.a && level > 4);
-    unrefine(RADIUS > conf.R + 10.0 * conf.a && level > 3);
+    // Refine the mesh near the ring
+    refine (RADIUS < 1.7 * conf.R && level < conf.max_level - 1);
+    refine (RADIUS < 1.4*conf.R && level < conf.max_level);
+    unrefine(RADIUS > 2.0 * conf.R && level > conf.min_level + 2);
+    unrefine(RADIUS > 2.5 * conf.R && level > conf.min_level + 1);
+    unrefine(RADIUS > 3.0 * conf.R && level > conf.min_level);
+    unrefine(RADIUS > 4.0 * conf.R && level > conf.min_level - 1);
     boundary (all);
 
     if (pid() == 0)
-        printf("\n %s ", "Computing Integral ... ");
+        printf("%s\n", "Computing The Integral ... ");
 
     foreach () {
-        u.x[] = U_x0(x,y,z,conf.Z0,conf.a);
-        u.y[] = U_y0(x,y,z,conf.Z0,conf.a);
-        u.z[] = U_z0(x,y,z,conf.Z0,conf.a);
-        printf("%6f %6f %6f %g %g %g %d \n", x, y, z, u.x[], u.y[], u.z[], pid());
-
+        u.x[] = U_x0(x, y, z, conf.Z0, conf.a);
+        u.y[] = U_y0(x, y, z, conf.Z0, conf.a);
+        u.z[] = U_z0(x, y, z, conf.Z0, conf.a);
+        //printf("%6f %6f %6f %g %g %g %d \n", x, y, z, u.x[], u.y[], u.z[], pid());
     }
 
     if (pid() == 0)
@@ -139,7 +135,7 @@ event init(t = 0.0) {
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level, 3);
+    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level, conf.min_level);
     fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
@@ -153,7 +149,7 @@ event adapt (i++) {
   - W_Z2: W*(z-L)^2 where L is the initial position of the ring
   - PID: Process ID of the CPU in charge of that cell
   - LEVEL: Level of refinement. The number of cells is 2^LEVEL
-  CHECK FOR FILE EXISTANCE
+  TO DO: CHECK FOR FILE EXISTANCE
 */
 event snapshots (t += save_dt) {
     vector W_vec[], W_r[], W_r2[], W_Z[], W_Z2[];
@@ -195,7 +191,11 @@ void init_values(int argc, char *argv[]) {
     conf.viscosity = 1.0 / conf.Re;
     conf.initial_level = strtod(argv[7], &ptr);
     conf.max_level = strtod(argv[8], &ptr);
-    conf.threshold = strtod(argv[9], &ptr);
+    conf.min_level = strtod(argv[9], &ptr);
+
+    // Theoretical max velocity divided by 300
+    conf.threshold = (0.64 * conf.Gamma / (2 * M_PI * conf.a)) / 300;
+
     save_dt = strtod(argv[10], &ptr);
     conf.path = argv[11];
     if (pid() == 0) {
@@ -207,40 +207,10 @@ void init_values(int argc, char *argv[]) {
         printf("Re = %g \n", conf.Re);
         printf("initial_level = %d \n", conf.initial_level);
         printf("max_level = %d \n", conf.max_level);
-        printf("threshold = %g \n", conf.threshold);
+        printf("min_level = %g \n", conf.min_level);
         printf("save_dt = %g \n", save_dt);
         printf("path = %s \n", conf.path);
     }
-}
-
-void Integral(double x, double y, double z, double vals[3]) {
-    vals[0] = 0.0;
-    vals[1] = 0.0;
-    vals[2] = 0.0;
-
-    // Create the command to be executed
-    char command[256];
-    sprintf (command, "./integral %g %g %g %g %g", conf.Z0, conf.a, x, y, z);
-    printf("%s\n", command);
-
-    // Execute the command
-    FILE *cmd = popen(command, "r");
-
-    // Get the command output
-    char buf[256] = {0x0};
-    while (fgets(buf, sizeof(buf), cmd) != NULL) {
-        // Output is separated with ,
-        // separate the string
-        char *token = strtok(buf, ",");
-        for (int i = 0; i < 3; ++i) {
-            // store integral value
-            vals[i] = atof(token);
-            token = strtok(NULL, ",");
-        }
-    }
-
-    // Close file
-    pclose(cmd);
 }
 
 void curl(const vector v, vector curl) {

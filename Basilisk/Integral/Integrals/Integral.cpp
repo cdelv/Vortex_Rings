@@ -11,7 +11,7 @@ qcc main.c -L. -lconnector -lstdc++ -o c_aaa -lm
 #include <iostream>
 #include "vector.h"
 
-const int points = 100;
+const int points = 60;
 
 
 #define Gauss
@@ -43,7 +43,7 @@ struct Config {
     double Gamma = 1.0;
     double Z0;
     double a;
-    double eps = 1.0e-9;
+    double eps = 1.0e-6;
 } Conf;
 
 void Vorticity(vector3D &x, vector3D &u)
