@@ -31,7 +31,7 @@
 #include "output_htg.h"
 
 // Macro for ring refinement
-#define RADIUS (sqrt(sq(x) + sq(y)))
+#define RADIUS (sqrt(sq(x) + sq(y) + sq(z)))
 
 struct Config {
     // Finalization time.
@@ -70,13 +70,6 @@ void init_values(int argc, char *argv[]);
 void curl(const vector v, vector curl);
 void Integral(double x, double y, double z, double vals[3]);
 
-int k=0;
-
-int count(){
-    k+=1;
-    return k;
-}
-
 /*
   Velocity boundary conditions:
   The order of the boundaries in 3D is
@@ -100,18 +93,6 @@ p[bottom] = dirichlet(0.0);
 p[right]  = dirichlet(0.0);
 p[left]   = dirichlet(0.0);
 
-/*
-  Laplace Boundary Conditions
-  The Dirichlet condition is necessary for convergence.
-  It's the farthest boundary from the ring.
-*/
-scalar vx0[], vy0[], vz0[];
-scalar bx[], by[], bz[]; // forcing terms
-
-vx0[back] = dirichlet(0.0);
-vy0[back] = dirichlet(0.0);
-vz0[back] = dirichlet(0.0);
-
 int main(int argc, char *argv[]) {
     init_values(argc, argv);
     init_grid ((int)pow(2, conf.initial_level));
@@ -126,21 +107,35 @@ int main(int argc, char *argv[]) {
   Initial Condition: we initialize the velocity from a vorticity field.
 */
 event init(t = 0.0) {
-
     // Refine the ring
-    refine (RADIUS < conf.R + 1.5 * conf.a && abs(z - conf.Z0) < conf.a && level < conf.max_level - 1);
-    refine (RADIUS < conf.R + 4.5 * conf.a && abs(z - conf.Z0) < 3 * conf.a && level < conf.max_level - 2);
-    unrefine(RADIUS + sq(z) > conf.R + 4 * conf.a );
+    refine (RADIUS < conf.R + 1.1 * conf.a && level < conf.max_level - 1);
+    refine (RADIUS < conf.R + 4.5 * conf.a && level < conf.max_level - 2);
+    unrefine(RADIUS > conf.R + 5.0 * conf.a && level > 4);
+    unrefine(RADIUS > conf.R + 10.0 * conf.a && level > 3);
+    boundary (all);
 
     double vals[3];
 
-    foreach () {
-        Integral(x, y, z, vals);
-        u.x[] = vals[0];
-        u.y[] = vals[1];
-        u.z[] = vals[2];
-        printf("%g %g %g %d \n", vals[0], vals[1], vals[2], count());
+    if (pid() == 0)
+        printf("\n %s ", "Computing Integral ... ");
+
+    MPI_Barrier (MPI_COMM_WORLD);
+
+    for (int kk = 1; kk < npe(); ++kk){
+        MPI_Barrier (MPI_COMM_WORLD);
+        if (pid() == kk) {
+            foreach_cell () {
+                Integral(x, y, z, vals);
+                u.x[] = vals[0];
+                u.y[] = vals[1];
+                u.z[] = vals[2];
+                printf("%g %g %g %g %g %g %d \n", x, y, z, vals[0], vals[1], vals[2], pid());
+            }
+        }
     }
+
+    if (pid() == 0)
+        printf("%s\n", "Done.");
 }
 
 
@@ -149,7 +144,7 @@ event init(t = 0.0) {
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level);
+    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level, 3);
     fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
@@ -187,7 +182,7 @@ event snapshots (t += save_dt) {
     // Paraview output
     char prefix[80];
     sprintf(prefix, "data_%03d_%06d", (int) t, i);
-    output_htg((scalar *) {W_mag, PID, LEVEL}, (vector *) {uf, W_vec, W_r, W_r2, W_Z, W_Z2}, conf.path, prefix, i, t);
+    output_htg((scalar *) {W_mag, PID, LEVEL}, (vector *) {u, W_vec, W_r, W_r2, W_Z, W_Z2}, conf.path, prefix, i, t);
 }
 
 event stop (t = conf.tmax);
