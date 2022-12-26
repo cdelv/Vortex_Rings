@@ -12,6 +12,8 @@
 #include "navier-stokes/perfs.h"
 #include "utils.h"
 
+// TO DO: TEST INTEGRAL 3D WITH ZO!=0
+
 /*
   This include is for Paraview visualization. We took it from Sander Sandbox.
   Thank you very much for your help, Maximilian Sander.
@@ -28,9 +30,13 @@
 #include "output_htg.h"
 
 /*
-  -
+  - Integrals3D/connector.h: 
+  - Integrals2D/connector.h: 
+
+  DONT FORGET TO CHENGE THIS IN CONFIG.MK AND LD_LIBRARY_PATHENV VARIABLE
 */
-#include "Integrals/connector.h"
+//#include "Integrals3D/connector.h"
+#include "Integrals2D/connector.h"
 
 // Macro for ring refinement
 #define RADIUS (sqrt(sq(x) + sq(y) + sq(z)))
@@ -107,10 +113,10 @@ int main(int argc, char *argv[]) {
 */
 event init(t = 0.0) {
     // Refine the mesh near the ring
-    refine (RADIUS < 1.7 * conf.R && level < conf.max_level - 1);
-    refine (RADIUS < 1.4*conf.R && level < conf.max_level);
-    unrefine(RADIUS > 2.0 * conf.R && level > conf.min_level + 2);
-    unrefine(RADIUS > 2.5 * conf.R && level > conf.min_level + 1);
+    //refine (RADIUS < 1.7 * conf.R && level < conf.max_level - 1);
+    //refine (RADIUS < 1.4*conf.R && level < conf.max_level);
+    //unrefine(RADIUS > 2.0 * conf.R && level > conf.min_level + 2);
+    //unrefine(RADIUS > 2.5 * conf.R && level > conf.min_level + 1);
     unrefine(RADIUS > 3.0 * conf.R && level > conf.min_level);
     unrefine(RADIUS > 4.0 * conf.R && level > conf.min_level - 1);
     boundary (all);
@@ -119,10 +125,11 @@ event init(t = 0.0) {
         printf("%s\n", "Computing The Integral ... ");
 
     foreach () {
-        u.x[] = U_x0(x, y, z, conf.Z0, conf.a);
-        u.y[] = U_y0(x, y, z, conf.Z0, conf.a);
-        u.z[] = U_z0(x, y, z, conf.Z0, conf.a);
-        //printf("%6f %6f %6f %g %g %g %d \n", x, y, z, u.x[], u.y[], u.z[], pid());
+        compute_U0(x, y, z, conf.a, conf.Z0);
+        u.x[] = U_x0();
+        u.y[] = U_y0();
+        u.z[] = U_z0();
+        printf("%6f %6f %6f %g %g %g %d \n", x, y, z, u.x[], u.y[], u.z[], pid());
     }
 
     if (pid() == 0)
@@ -193,8 +200,8 @@ void init_values(int argc, char *argv[]) {
     conf.max_level = strtod(argv[8], &ptr);
     conf.min_level = strtod(argv[9], &ptr);
 
-    // Theoretical max velocity divided by 300
-    conf.threshold = (0.64 * conf.Gamma / (2 * M_PI * conf.a)) / 300;
+    // Theoretical max velocity divided by Re
+    conf.threshold = (0.64 * conf.Gamma / (2 * M_PI * conf.a)) / conf.Re;
 
     save_dt = strtod(argv[10], &ptr);
     conf.path = argv[11];

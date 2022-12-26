@@ -11,8 +11,8 @@ qcc main.c -L. -lconnector -lstdc++ -o c_aaa -lm
 #include <iostream>
 #include "vector.h"
 
-const int points = 60;
-
+const int points = 15;
+const int depth = 6;
 
 #define Gauss
 
@@ -24,6 +24,7 @@ const int points = 60;
 
 using namespace boost::math::quadrature;
 
+double Ux = 0, Uy = 0, Uz = 0;
 
 /* The center of the ring is located in
     x = 0.0
@@ -48,25 +49,16 @@ struct Config {
 
 void Vorticity(vector3D &x, vector3D &u)
 {
-    double theta = std::atan2(x.z() - Conf.Z0, x.y());
-    u.load(0.0, Conf.R * std::cos(theta), Conf.Z0 + Conf.R * std::sin(theta)); // linear vortex
-    double r = norm(u - x);
-
-    // lineal ring
-    /*if (r <= Conf.a) {
-        u.load(0.0, -std::sin(theta), std::cos(theta)); // tangent vortex
-        u *= (1 - r / Conf.a) * Conf.Gamma;
-    } else
-        u.load(0.0, 0.0, 0.0);*/
+    double theta = std::atan2(x.y(), x.x());
+    double rho = std::hypot(x.x(), x.y()) - Conf.R;
+    double z = x.z() - Conf.Z0;
 
     //gausian ring
-    u.load(0.0, -std::sin(theta), std::cos(theta)); // tangent vortex
-    u *= (Conf.Gamma/(M_PI*std::pow(Conf.a,2)))*std::exp(-std::pow(r/Conf.a,2));
+    u.load(-std::sin(theta), std::cos(theta), 0.0); // tangent vortex
+    u *= Conf.Gamma * M_1_PI * std::pow(Conf.a, -2) * std::exp(-std::pow(rho / Conf.a, 2) - std::pow(z / Conf.a, 2));
 }
 
-double Integral_x(double xx, double yy, double zz, double Z0, double a) {
-    Conf.a = a;
-    Conf.Z0 = Z0;
+double Integral_x(double xx, double yy, double zz) {
     vector3D r(xx, yy, zz);
 #ifdef Gauss
     double x1 = -std::numeric_limits<double>::infinity();
@@ -103,7 +95,7 @@ double Integral_x(double xx, double yy, double zz, double Z0, double a) {
     auto f1 = [&](double x, double y) {
         auto g = [&](double z) { return f2(x, y, z); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, z1, z2);
+        return gauss_kronrod<double, points>::integrate(g, z1, z2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
@@ -112,21 +104,19 @@ double Integral_x(double xx, double yy, double zz, double Z0, double a) {
     auto f = [&](double x) {
         auto g = [&](double y) { return f1(x, y); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, y1, y2);
+        return gauss_kronrod<double, points>::integrate(g, y1, y2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
     };
 #ifdef Gauss
-    return 0.25 * M_1_PI * gauss<double, points>::integrate(f, x1, x2);
+    return 0.25 * M_1_PI * gauss_kronrod<double, points>::integrate(f, x1, x2, depth, Conf.eps);
 #else
     return 0.25 * M_1_PI * integrator.integrate(f, error, &L1);
 #endif
 }
 
-double Integral_y(double xx, double yy, double zz, double Z0, double a) {
-    Conf.a = a;
-    Conf.Z0 = Z0;
+double Integral_y(double xx, double yy, double zz) {
     vector3D r(xx, yy, zz);
 #ifdef Gauss
     double x1 = -std::numeric_limits<double>::infinity();
@@ -163,7 +153,7 @@ double Integral_y(double xx, double yy, double zz, double Z0, double a) {
     auto f1 = [&](double x, double y) {
         auto g = [&](double z) { return f2(x, y, z); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, z1, z2);
+        return gauss_kronrod<double, points>::integrate(g, z1, z2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
@@ -172,21 +162,19 @@ double Integral_y(double xx, double yy, double zz, double Z0, double a) {
     auto f = [&](double x) {
         auto g = [&](double y) { return f1(x, y); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, y1, y2);
+        return gauss_kronrod<double, points>::integrate(g, y1, y2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
     };
 #ifdef Gauss
-    return 0.25 * M_1_PI * gauss<double, points>::integrate(f, x1, x2);
+    return 0.25 * M_1_PI * gauss_kronrod<double, points>::integrate(f, x1, x2, depth, Conf.eps);
 #else
     return 0.25 * M_1_PI * integrator.integrate(f, error, &L1);
 #endif
 }
 
-double Integral_z(double xx, double yy, double zz, double Z0, double a) {
-    Conf.a = a;
-    Conf.Z0 = Z0;
+double Integral_z(double xx, double yy, double zz) {
     vector3D r(xx, yy, zz);
 #ifdef Gauss
     double x1 = -std::numeric_limits<double>::infinity();
@@ -216,14 +204,14 @@ double Integral_z(double xx, double yy, double zz, double Z0, double a) {
 
         double norm = rr.norm();
 
-        // cross(coord)
+        // W(r') x (r-r')/|r-r'|^3
         return cross.z() * std::pow(norm + Conf.eps, -3);
     };
 
     auto f1 = [&](double x, double y) {
         auto g = [&](double z) { return f2(x, y, z); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, z1, z2);
+        return gauss_kronrod<double, points>::integrate(g, z1, z2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
@@ -232,14 +220,36 @@ double Integral_z(double xx, double yy, double zz, double Z0, double a) {
     auto f = [&](double x) {
         auto g = [&](double y) { return f1(x, y); };
 #ifdef Gauss
-        return gauss<double, points>::integrate(g, y1, y2);
+        return gauss_kronrod<double, points>::integrate(g, y1, y2, depth, Conf.eps);
 #else
         return integrator.integrate(g, error, &L1);
 #endif
     };
 #ifdef Gauss
-    return 0.25 * M_1_PI * gauss<double, points>::integrate(f, x1, x2);
+    return 0.25 * M_1_PI * gauss_kronrod<double, points>::integrate(f, x1, x2, depth, Conf.eps);
 #else
     return 0.25 * M_1_PI * integrator.integrate(f, error, &L1);
 #endif
+}
+
+void compute_V0(double x, double y, double z, double a, double Z0)
+{
+    Conf.a = a;
+    Conf.Z0 = Z0;
+
+    Ux = Integral_x(x, y, z);
+    Uy = Integral_y(x, y, z);
+    Uz = Integral_z(x, y, z);
+}
+
+double get_Vx(void) {
+    return Ux;
+}
+
+double get_Vy(void) {
+    return Uy;
+}
+
+double get_Vz(void) {
+    return Uz;
 }
