@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+double W_0(double rho, double z);
 void compute_U0(double x, double y, double z, double a, double Z0);
 double U_x0(void);
 double U_y0(void);

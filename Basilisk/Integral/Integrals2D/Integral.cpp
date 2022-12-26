@@ -16,7 +16,7 @@ struct Config {
 } Conf;
 
 double w(double rho, double z) {
-    return Conf.Gamma * M_1_PI * std::pow(Conf.a, -2) * std::exp(-(std::pow(rho - Conf.R, 2) + std::pow(z - Conf.Z0, 2)) * std::pow(Conf.a, -2));
+    return Conf.Gamma * M_1_PI * std::pow(Conf.a, -2) * std::exp(-(std::pow((rho - Conf.R) / Conf.a, 2) + std::pow((z - Conf.Z0) / Conf.a, 2)) );
 }
 
 double dE_dk(double x) {
@@ -93,9 +93,9 @@ void compute_V0(double x, double y, double z, double a, double Z0) {
     double rho = std::hypot(x, y);
     double theta = std::atan2(y, x);
 
-    Uz = IG_z(rho, theta);
+    Uz = IG_z(rho, z);
 
-    double V_rho = IG_rho(rho, theta);
+    double V_rho = IG_rho(rho, z);
 
     Ux = V_rho * std::cos(theta);
     Uy = V_rho * std::sin(theta);
