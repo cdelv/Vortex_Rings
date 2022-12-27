@@ -2,7 +2,7 @@
 #include "boost/math/quadrature/gauss_kronrod.hpp"
 
 const int points = 15;
-const int depth = 6;
+const int depth = 8;
 
 double Ux = 0, Uy = 0, Uz = 0;
 

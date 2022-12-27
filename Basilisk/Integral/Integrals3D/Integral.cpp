@@ -12,7 +12,7 @@ qcc main.c -L. -lconnector -lstdc++ -o c_aaa -lm
 #include "vector.h"
 
 const int points = 15;
-const int depth = 6;
+const int depth = 8;
 
 #define Gauss
 
@@ -46,6 +46,10 @@ struct Config {
     double a;
     double eps = 1.0e-6;
 } Conf;
+
+double w(double rho, double z) {
+    return Conf.Gamma * M_1_PI * std::pow(Conf.a, -2) * std::exp(-(std::pow((rho - Conf.R) / Conf.a, 2) + std::pow((z - Conf.Z0) / Conf.a, 2)) );
+}
 
 void Vorticity(vector3D &x, vector3D &u)
 {

@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+double W_0(double rho, double z){
+    return w(rho, z);
+}
+
 void compute_U0(double x, double y, double z, double a, double Z0){
     compute_V0(x, y, z, a, Z0);
 }

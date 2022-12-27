@@ -11,9 +11,6 @@
 #include "navier-stokes/centered.h"
 #include "navier-stokes/perfs.h"
 #include "utils.h"
-
-// TO DO: TEST INTEGRAL 3D WITH ZO!=0
-
 /*
   This include is for Paraview visualization. We took it from Sander Sandbox.
   Thank you very much for your help, Maximilian Sander.
@@ -28,12 +25,11 @@
   - x-z Axis is swapped (3D), x-y Axis is swapped (2D).
 */
 #include "output_htg.h"
-
 /*
   - Integrals3D/connector.h:
   - Integrals2D/connector.h:
 
-  DONT FORGET TO CHENGE THIS IN CONFIG.MK AND LD_LIBRARY_PATHENV VARIABLE
+  DONT FORGET TO CHENGE THIS IN CONFIG.MK AND LD_LIBRARY_PATHENV VARIABLE TOO
 */
 //#include "Integrals3D/connector.h"
 #include "Integrals2D/connector.h"
@@ -102,14 +98,17 @@ int main(int argc, char *argv[]) {
     init_values(argc, argv);
     init_grid ((int)pow(2, conf.initial_level));
     size(conf.L);
-    X0 = Y0 = Z0 = -L0 / 2;
+    X0 = Y0 = -L0 / 2;
+    Z0 = -conf.Z0;
+    conf.Z0 = 0.0;
     const face vector muc[] = {conf.viscosity, conf.viscosity, conf.viscosity};
     mu = muc;
     run();
 }
 
 /*
-  Initial Condition: we initialize the velocity from a vorticity field.
+  Initial Condition: we initialize the velocity from a vorticity field. We also refine the mesh
+  with the vorticity before computing the integral.
 */
 event init(t = 0.0) {
     // Compute Initial Vorticity.
@@ -119,7 +118,7 @@ event init(t = 0.0) {
         W_mag[] = W_0(hypot(x, y), z);
 
     // Refine the Ring Based on Vorticity.
-    // As Vorticity is Gaussian, the Threshold is the Value times 0.1 at ns Standar Deviations.
+    // As Vorticity is Gaussian, the Threshold is the Value at ns Standar Deviations.
     for (int ii = 0; ii < conf.initial_level; ++ii)
         adapt_wavelet ((scalar*) {W_mag}, (double[]) {W_0(conf.R + conf.ns * conf.a, conf.Z0)}, conf.max_level, conf.min_level - 1);
 
@@ -163,28 +162,19 @@ event adapt (i++) {
   TO DO: CHECK FOR FILE EXISTANCE
 */
 event snapshots (t += save_dt) {
-    vector W_vec[], W_r[], W_r2[], W_Z[], W_Z2[];
-    scalar W_mag[], PID[], LEVEL[];
+    vector W_vec[];
+    scalar W_mag[];
 
     curl(u, W_vec);
 
     foreach () {
-        double r = hypot(x, y);
         W_mag[] = norm(W_vec);
-        PID[] = pid();
-        LEVEL[] = level;
-        foreach_dimension() {
-            W_r.x[] = r * W_vec.x[];
-            W_r2.x[] = pow(r , 2) * W_vec.x[];
-            W_Z.x[] = (z - conf.Z0) * W_vec.x[];
-            W_Z2.x[] = pow(z - conf.Z0, 2) * W_vec.x[];
-        }
     }
 
     // Paraview output
     char prefix[80];
     sprintf(prefix, "data_%03d_%06d", (int) t, i);
-    output_htg((scalar *) {W_mag, PID, LEVEL}, (vector *) {u, W_vec, W_r, W_r2, W_Z, W_Z2}, conf.path, prefix, i, t);
+    output_htg((scalar *) {W_mag}, (vector *) {u, W_vec}, conf.path, prefix, i, t);
 }
 
 event stop (t = conf.tmax);
@@ -210,6 +200,8 @@ void init_values(int argc, char *argv[]) {
     save_dt = strtod(argv[10], &ptr);
     conf.path = argv[11];
 
+    // print to comand line the configuration and
+    // save a file with the configuration to conf.path.
     if (pid() == 0) {
         printf("tmax = %g \n", conf.tmax);
         printf("L = %g \n", conf.L);
@@ -225,6 +217,28 @@ void init_values(int argc, char *argv[]) {
         printf("min_level = %d \n", conf.min_level);
         printf("save_dt = %g \n", save_dt);
         printf("path = %s \n", conf.path);
+        char name[256];
+        sprintf (name, "%s/conf.txt", conf.path);
+        FILE * file;
+        file = fopen (name, "w");
+        fprintf (file, "tmax = %g \n", conf.tmax);
+        fprintf (file, "L = %g \n", conf.L);
+        fprintf (file, "R = %g \n", conf.R);
+        fprintf (file, "Z0 = %g \n", conf.Z0);
+        fprintf (file, "a = %g \n", conf.a);
+        fprintf (file, "Gamma = %g \n", conf.Gamma);
+        fprintf (file, "Re = %g \n", conf.Re);
+        fprintf (file, "ns = %g \n", conf.ns);
+        fprintf (file, "threshold = %g \n", conf.threshold);
+        fprintf (file, "initial_level = %d \n", conf.initial_level);
+        fprintf (file, "max_level = %d \n", conf.max_level);
+        fprintf (file, "min_level = %d \n", conf.min_level);
+        fprintf (file, "save_dt = %g \n", save_dt);
+        fprintf (file, "path = %s \n", conf.path);
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        fprintf(file, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        fclose(file);
     }
 }
 
