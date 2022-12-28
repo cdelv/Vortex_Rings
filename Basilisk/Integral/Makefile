@@ -35,8 +35,8 @@ ifeq ($(SHARE_FOLDER), NULL)
 	@echo -e "${BRed}No share directory.${NC}"
 else
 	@echo -e "${BCyan}Copying output to $(SHARED_FOLDER)${NC}"
-	@-rm -r $(SHARED_FOLDER)/htg/*
-	@-rm $(SHARED_FOLDER)/output_htg.pvd
+	@rm -rf $(SHARED_FOLDER)/htg/*
+	@rm -f $(SHARED_FOLDER)/output_htg.pvd
 	@cp -r htg/ output_htg.pvd -t $(SHARED_FOLDER)
 endif
 
