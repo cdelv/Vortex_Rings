@@ -120,7 +120,7 @@ event init(t = 0.0) {
     // Refine the Ring Based on Vorticity.
     // As Vorticity is Gaussian, the Threshold is the Value at ns Standar Deviations.
     for (int ii = 0; ii < conf.initial_level; ++ii)
-        adapt_wavelet ((scalar*) {W_mag}, (double[]) {W_0(conf.R + conf.ns * conf.a, conf.Z0)}, conf.max_level, conf.min_level - 1);
+        adapt_wavelet ((scalar*) {W_mag}, (double[]) {W_0(conf.R + conf.ns * conf.a, conf.Z0)}, conf.max_level, conf.min_level + 1);
 
     printf("Number of elements in pid = %d: N = %d\n", pid(), grid->n);
 
@@ -145,7 +145,14 @@ event init(t = 0.0) {
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-    astats s = adapt_wavelet ((scalar*) {u}, (double[]) {conf.threshold , conf.threshold, conf.threshold}, conf.max_level, conf.min_level);
+    conf.threshold = 0.5*exp(-conf.R*M_1_PI*t/(conf.a*conf.Re))*7.0e-4;
+
+    scalar logu [];
+
+    foreach()
+        logu[] = norm(u);
+
+    astats s = adapt_wavelet ((scalar*) {logu}, (double[]) {conf.threshold}, conf.max_level, conf.min_level);
     fprintf (stderr, "# Time %3f step %d -> refined %d cells, coarsened %d cells\n", t, i, s.nf, s.nc);
 }
 
@@ -195,7 +202,6 @@ void init_values(int argc, char *argv[]) {
     conf.initial_level = strtod(argv[7], &ptr);
     conf.max_level = strtod(argv[8], &ptr);
     conf.min_level = strtod(argv[9], &ptr);
-    conf.threshold = 0.05 * 0.64 * conf.Gamma * M_1_PI / (2 * conf.a * conf.Re);
 
     save_dt = strtod(argv[10], &ptr);
     conf.path = argv[11];
@@ -211,7 +217,6 @@ void init_values(int argc, char *argv[]) {
         printf("Gamma = %g \n", conf.Gamma);
         printf("Re = %g \n", conf.Re);
         printf("ns = %g \n", conf.ns);
-        printf("threshold = %g \n", conf.threshold);
         printf("initial_level = %d \n", conf.initial_level);
         printf("max_level = %d \n", conf.max_level);
         printf("min_level = %d \n", conf.min_level);
@@ -229,7 +234,6 @@ void init_values(int argc, char *argv[]) {
         fprintf (file, "Gamma = %g \n", conf.Gamma);
         fprintf (file, "Re = %g \n", conf.Re);
         fprintf (file, "ns = %g \n", conf.ns);
-        fprintf (file, "threshold = %g \n", conf.threshold);
         fprintf (file, "initial_level = %d \n", conf.initial_level);
         fprintf (file, "max_level = %d \n", conf.max_level);
         fprintf (file, "min_level = %d \n", conf.min_level);

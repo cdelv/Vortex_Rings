@@ -1,5 +1,5 @@
 # Simulation Time
-tmax = 300.0
+tmax = 175.0
 
 # Simulation Domain LxLxL
 L = 30.0
@@ -9,11 +9,11 @@ I_Path = Integrals2D
 
 # Ring Parameters
 # Z0 -> Distance to boundary
-Z0 = 7
+Z0 = 8
 a = 0.08
  
 # Fluid parameters
-Re = 1000
+Re = 50
 
 # AMR parameters
 ns = 3
