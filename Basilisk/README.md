@@ -43,7 +43,7 @@ export PATH=$PATH:$PWD
 ```
 sudo apt install flex bison make gawk gfortran
 sudo apt-get install bison libglu1-mesa-dev libglew-dev libgl1-mesa-dev
-sudo apt install gnuplot imagemagick ffmpeg graphviz valgrind gifsicle pstoedit
+sudo apt install gnuplot imagemagick ffmpeg graphviz valgrind gifsicle pstoedit bison libglu1-mesa-dev libosmesa6-dev
 ```
 
 The last ones are for visualization and are optional. We are going to compile Basilisk with MPI. For that, you can use the config file provided in the repository.
