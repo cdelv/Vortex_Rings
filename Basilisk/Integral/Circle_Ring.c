@@ -55,6 +55,7 @@ struct Config {
     // AMR parameters
     double ns, threshold;
     int max_level, initial_level, min_level;
+    double CFL;
 
     // File saving parameters
     char *path;
@@ -111,6 +112,8 @@ int main(int argc, char *argv[]) {
   with the vorticity before computing the integral.
 */
 event init(t = 0.0) {
+    // Set up the time step condition
+    CFL = conf.CFL;
     // Compute Initial Vorticity.
     scalar W_mag[];
     compute_U0(0, 0, 0, conf.a, conf.Z0);
@@ -145,7 +148,7 @@ event init(t = 0.0) {
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-    conf.threshold = 0.5*exp(-conf.R*M_1_PI*t/(conf.a*conf.Re))*7.0e-4;
+    conf.threshold = 0.5*exp(-conf.R*M_1_PI*t/(conf.a*conf.Re))*8.0e-4;
 
     scalar logu [];
 
@@ -202,9 +205,10 @@ void init_values(int argc, char *argv[]) {
     conf.initial_level = strtod(argv[7], &ptr);
     conf.max_level = strtod(argv[8], &ptr);
     conf.min_level = strtod(argv[9], &ptr);
+    conf.CFL = strtod(argv[10], &ptr);
 
-    save_dt = strtod(argv[10], &ptr);
-    conf.path = argv[11];
+    save_dt = strtod(argv[11], &ptr);
+    conf.path = argv[12];
 
     // print to comand line the configuration and
     // save a file with the configuration to conf.path.
@@ -220,6 +224,7 @@ void init_values(int argc, char *argv[]) {
         printf("initial_level = %d \n", conf.initial_level);
         printf("max_level = %d \n", conf.max_level);
         printf("min_level = %d \n", conf.min_level);
+        printf ("CFL = %g \n", conf.CFL);
         printf("save_dt = %g \n", save_dt);
         printf("path = %s \n", conf.path);
         char name[256];
@@ -237,6 +242,7 @@ void init_values(int argc, char *argv[]) {
         fprintf (file, "initial_level = %d \n", conf.initial_level);
         fprintf (file, "max_level = %d \n", conf.max_level);
         fprintf (file, "min_level = %d \n", conf.min_level);
+        fprintf (file, "CFL = %g \n", conf.CFL);
         fprintf (file, "save_dt = %g \n", save_dt);
         fprintf (file, "path = %s \n", conf.path);
         time_t t = time(NULL);
