@@ -148,7 +148,8 @@ event init(t = 0.0) {
   - We use the velocity as the criteria for refinement.
 */
 event adapt (i++) {
-    conf.threshold = 0.5*exp(-conf.R*M_1_PI*t/(conf.a*conf.Re))*8.0e-4;
+    //conf.threshold = 0.5*exp(-conf.R*M_1_PI*t/(conf.a*conf.Re))*8.0e-4;
+    conf.threshold = 2.0e-4/(1.0 + 4.0*M_PI*conf.a*t/(conf.Re*conf.R));
 
     scalar logu [];
 
