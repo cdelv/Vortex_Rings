@@ -123,7 +123,7 @@ event init(t = 0.0) {
     // Refine the Ring Based on Vorticity.
     // As Vorticity is Gaussian, the Threshold is the Value at ns Standar Deviations.
     for (int ii = 0; ii < conf.initial_level; ++ii)
-        adapt_wavelet ((scalar*) {W_mag}, (double[]) {W_0(conf.R + conf.ns * conf.a, conf.Z0)}, conf.max_level, conf.min_level + 1);
+        adapt_wavelet ((scalar*) {W_mag}, (double[]) {W_0(conf.R + conf.ns * conf.a, conf.Z0)}, conf.max_level - 1, conf.min_level);
 
     printf("Number of elements in pid = %d: N = %d\n", pid(), grid->n);
 
